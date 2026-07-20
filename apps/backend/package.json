@@ -13,7 +13,9 @@
     "test": "jest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "render:build": "prisma generate && prisma migrate deploy && ts-node prisma/seed.ts && nest build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1090.0",

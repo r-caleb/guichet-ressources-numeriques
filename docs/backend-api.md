@@ -93,6 +93,18 @@ Si cette URL affiche `Cannot GET /api/docs` ou une page `404`, cela signifie gé
 2. relancer `npm run dev:backend` ;
 3. si le port reste occupé, changer `PORT=4001` dans `apps/backend/.env`, puis ouvrir `http://localhost:4001/api/docs`.
 
+## Déploiement Render
+
+Pour le Web Service Render du backend :
+
+```txt
+Root Directory: apps/backend
+Build Command: npm install; npm run render:build
+Start Command: npm run start:prod
+```
+
+`render:build` génère le client Prisma, applique les migrations sur PostgreSQL avec `prisma migrate deploy`, exécute le seed initial, puis compile NestJS.
+
 ## Endpoints principaux
 
 | Méthode | Endpoint | Accès | Rôle |
