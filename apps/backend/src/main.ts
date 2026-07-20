@@ -25,7 +25,7 @@ async function bootstrap() {
   const allowedOrigins = (
     config.get<string>('FRONTEND_ORIGINS') ??
     config.get<string>('FRONTEND_ORIGIN') ??
-    'http://localhost:3000'
+    'http://localhost:3000,https://guichet-ressources-numeriques-front.vercel.app,https://*.vercel.app'
   )
     .split(',')
     .map((origin) => origin.trim())
@@ -38,11 +38,12 @@ async function bootstrap() {
         return;
       }
 
+      const isWildcardAllowed = allowedOrigins.includes('*');
       const isExactOriginAllowed = allowedOrigins.includes(origin);
       const isVercelPreviewAllowed =
         allowedOrigins.includes('https://*.vercel.app') && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
 
-      callback(null, isExactOriginAllowed || isVercelPreviewAllowed);
+      callback(null, isWildcardAllowed || isExactOriginAllowed || isVercelPreviewAllowed);
     },
     credentials: true,
   });
