@@ -22,8 +22,17 @@ async function bootstrap() {
       },
     }),
   );
+  const allowedOrigins = (
+    config.get<string>('FRONTEND_ORIGINS') ??
+    config.get<string>('FRONTEND_ORIGIN') ??
+    'http://localhost:3000'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: config.get<string>('FRONTEND_ORIGIN') ?? 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   });
   app.setGlobalPrefix('api');
