@@ -1,0 +1,28 @@
+{
+  "name": "guichet-ressources-numeriques",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "dev:backend": "npm --workspace apps/backend run start:dev",
+    "build": "npm --workspaces run build",
+    "lint": "npm --workspaces run lint",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json,md}\" \"docs/**/*.md\""
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13",
+    "postcss": "8.5.10",
+    "@prisma/dev": {
+      "@hono/node-server": "1.19.13"
+    },
+    "next": {
+      "postcss": "8.5.10"
+    }
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

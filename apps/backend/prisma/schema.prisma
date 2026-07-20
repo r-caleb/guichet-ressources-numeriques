@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  AGENT
+}
+
+enum RequestStatus {
+  RECEIVED
+  UNDER_REVIEW
+  ADDITIONAL_DOCUMENTS_REQUESTED
+  APPROVED
+  REJECTED
+  RESOURCES_ASSIGNED
+  CLOSED
+}
+
+enum RequestType {
+  GOVERNMENT_SUBDOMAIN
+  HOSTING_SPACE
+  SUBDOMAIN_AND_HOSTING
+  RESOURCE_MODIFICATION
+  ACCESS_RESET
+  OTHER
+}
+
+enum PlatformType {
+  INSTITUTIONAL_SITE
+  WEB_APPLICATION
+  SERVICE_PORTAL
+  INTRANET
+  OTHER
+}
+
+enum AudienceType {
+  CITIZENS
+  BUSINESSES
+  PUBLIC_AGENTS
+  INSTITUTIONAL_PARTNERS
+  INTERNAL_ONLY
+}
+
+enum CriticalityLevel {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum DomainChoiceRank {
+  FIRST
+  SECOND
+  THIRD
+}
+
+enum DocumentType {
+  OFFICIAL_REQUEST_LETTER
+  FOCAL_POINT_DESIGNATION
+  ADDITIONAL_DOCUMENT
+}
+
+enum AccessTransmissionMode {
+  OFFICIAL_LETTER
+  OFFICIAL_EMAIL
+  PHYSICAL_HANDOVER
+}
+
+enum AuditAction {
+  REQUEST_CREATED
+  STATUS_CHANGED
+  DOCUMENT_ADDED
+  ADMIN_NOTE_ADDED
+  RESOURCE_ASSIGNED
+  REQUEST_CLOSED
+  USER_LOGIN
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  roles     UserRole[] @default([AGENT])
+  isActive  Boolean    @default(true)
+
+  instructedRequests ResourceRequest[] @relation("RequestInstructor")
+  auditEvents        AuditEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ministry {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  shortName   String?
+  officialEmailDomain String?
+  isActive    Boolean @default(true)
+
+  requests ResourceRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ResourceRequest {
+  id     String @id @default(uuid())
+  number String @unique
+
+  focalLastName   String
+  focalMiddleName String
+  focalFirstName  String
+  focalFunction   String
+  focalDepartment String
+  focalPhone      String
+  focalEmail      String
+
+  ministryId String
+  ministry   Ministry @relation(fields: [ministryId], references: [id])
+
+  requestTypes   RequestType[]
+  requestDetails String?
+
+  platformName     String
+  platformType     PlatformType
+  audience         AudienceType
+  criticality      CriticalityLevel @default(NORMAL)
+  existingUrl      String?
+  targetDate       DateTime?
+  officialPurpose  String
+  technicalContact String?
+
+  status RequestStatus @default(RECEIVED)
+
+  instructorId String?
+  instructor   User?   @relation("RequestInstructor", fields: [instructorId], references: [id])
+
+  assignedDomain       String?
+  hostingAssigned      Boolean @default(false)
+  resourcesCreatedAt   DateTime?
+  accessDeliveredAt    DateTime?
+  accessTransmissionMode AccessTransmissionMode?
+  administrativeNotes  String?
+  publicObservation    String?
+  rejectionReason      String?
+
+  domainChoices RequestDomainChoice[]
+  documents     RequestDocument[]
+  auditEvents   AuditEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([ministryId])
+  @@index([createdAt])
+}
+
+model RequestDomainChoice {
+  id        String           @id @default(uuid())
+  requestId String
+  request   ResourceRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  rank      DomainChoiceRank
+  prefix    String
+  fullDomain String
+
+  createdAt DateTime @default(now())
+
+  @@unique([rank, requestId])
+  @@index([prefix])
+}
+
+model RequestDocument {
+  id          String       @id @default(uuid())
+  requestId   String
+  request     ResourceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  type        DocumentType
+  originalName String
+  fileName    String
+  mimeType    String
+  size        Int
+  localPath   String
+  uploadedBy  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([type])
+}
+
+model AuditEvent {
+  id        String      @id @default(uuid())
+  action    AuditAction
+  message   String
+  requestId String?
+  request   ResourceRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  actorId   String?
+  actor     User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  metadata  Json?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([actorId])
+  @@index([createdAt])
+}
