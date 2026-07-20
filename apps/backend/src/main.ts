@@ -32,7 +32,18 @@ async function bootstrap() {
     .filter(Boolean);
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const isExactOriginAllowed = allowedOrigins.includes(origin);
+      const isVercelPreviewAllowed =
+        allowedOrigins.includes('https://*.vercel.app') && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+
+      callback(null, isExactOriginAllowed || isVercelPreviewAllowed);
+    },
     credentials: true,
   });
   app.setGlobalPrefix('api');
