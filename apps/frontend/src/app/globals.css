@@ -149,6 +149,10 @@ button {
   background: #eef4fb;
 }
 
+.mobile-menu-button {
+  display: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1612,7 +1616,6 @@ th {
 
 @media (max-width: 920px) {
   .header-inner,
-  .nav,
   .hero,
   .admin-grid,
   .footer-inner {
@@ -1621,18 +1624,65 @@ th {
 
   .header-inner {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
     min-height: auto;
     padding: 16px 0 12px;
   }
 
+  .brand {
+    min-width: 0;
+  }
+
   .nav {
+    display: none;
+    grid-column: 1 / -1;
+    width: 100%;
+    padding: 10px;
+    background: #f8fbfe;
+    border: 1px solid var(--gov-line);
+    border-radius: var(--gov-radius);
+    box-shadow: 0 10px 22px rgba(9, 36, 46, 0.08);
+  }
+
+  .nav.open {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .nav-link {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 0.78rem;
   }
 
   .brand-logo {
     height: 52px;
     max-width: 190px;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 42px;
+    padding: 0 12px;
+    color: var(--gov-blue);
+    background: #ffffff;
+    border: 1px solid #b7c6d6;
+    border-radius: 6px;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .mobile-menu-button:hover {
+    background: #eef4fb;
   }
 
   .header-search {

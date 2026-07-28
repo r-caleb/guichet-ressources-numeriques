@@ -2,15 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LockKeyhole, Search } from 'lucide-react';
+import { LockKeyhole, Menu, Search, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export function GovernmentHeader() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
     { href: '/', label: 'Demande' },
     { href: '/suivi', label: 'Suivi' },
   ];
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="site-header">
@@ -23,7 +29,22 @@ export function GovernmentHeader() {
           />
         </Link>
 
-        <nav className="nav" aria-label="Navigation principale">
+        <button
+          className="mobile-menu-button"
+          type="button"
+          aria-controls="primary-navigation"
+          aria-expanded={isMenuOpen}
+          onClick={() => setIsMenuOpen((current) => !current)}
+        >
+          {isMenuOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}
+          <span>Menu</span>
+        </button>
+
+        <nav
+          className={`nav${isMenuOpen ? ' open' : ''}`}
+          id="primary-navigation"
+          aria-label="Navigation principale"
+        >
           {navItems.map((item) => {
             const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
 
