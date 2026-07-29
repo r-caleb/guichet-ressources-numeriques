@@ -1665,20 +1665,14 @@ th {
   }
 
   .mobile-menu-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    min-height: 42px;
-    padding: 0 12px;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
     color: var(--gov-blue);
     background: #ffffff;
     border: 1px solid #b7c6d6;
     border-radius: 6px;
-    font-family: var(--font-heading);
-    font-size: 0.78rem;
-    font-weight: 900;
-    text-transform: uppercase;
   }
 
   .mobile-menu-button:hover {

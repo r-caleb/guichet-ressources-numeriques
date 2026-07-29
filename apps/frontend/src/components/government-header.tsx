@@ -32,12 +32,12 @@ export function GovernmentHeader() {
         <button
           className="mobile-menu-button"
           type="button"
+          aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
           aria-controls="primary-navigation"
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((current) => !current)}
         >
           {isMenuOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}
-          <span>Menu</span>
         </button>
 
         <nav
