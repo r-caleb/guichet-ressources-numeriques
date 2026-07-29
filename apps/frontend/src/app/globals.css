@@ -363,9 +363,17 @@ button {
   grid-column: 1 / -1;
 }
 
+.field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
 .required-mark {
+  display: inline-block;
   color: var(--gov-red);
   font-weight: 900;
+  line-height: 1;
 }
 
 .control {

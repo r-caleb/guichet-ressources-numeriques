@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Download, Printer, RotateCcw, Send } from 'lucide-react';
 import { Ministry, RequestReceipt, apiFetch, receiptPdfUrl } from '@/lib/api';
 import { audienceTypes, criticalityLevels, ministries as fallbackMinistries, platformTypes, requestTypes } from '@/lib/constants';
@@ -28,6 +28,14 @@ function RequiredMark() {
   return (
     <span className="required-mark" aria-label="obligatoire">
       *
+    </span>
+  );
+}
+
+function RequiredLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="field-label">
+      {children} <RequiredMark />
     </span>
   );
 }
@@ -307,23 +315,23 @@ export function RequestForm() {
         </div>
         <div className="form-grid">
           <label className="field">
-            Nom <RequiredMark />
+            <RequiredLabel>Nom</RequiredLabel>
             <input className="control" name="focalLastName" required />
           </label>
           <label className="field">
-            Postnom <RequiredMark />
+            <RequiredLabel>Postnom</RequiredLabel>
             <input className="control" name="focalMiddleName" required />
           </label>
           <label className="field">
-            Prénom <RequiredMark />
+            <RequiredLabel>Prénom</RequiredLabel>
             <input className="control" name="focalFirstName" required />
           </label>
           <label className="field">
-            Fonction <RequiredMark />
+            <RequiredLabel>Fonction</RequiredLabel>
             <input className="control" name="focalFunction" required />
           </label>
           <label className="field">
-            Ministère / Institution <RequiredMark />
+            <RequiredLabel>Ministère / Institution</RequiredLabel>
             <select
               className="control"
               name="ministryId"
@@ -342,20 +350,20 @@ export function RequestForm() {
           </label>
           {isOtherInstitution ? (
             <label className="field">
-              Nom de l'institution <RequiredMark />
+              <RequiredLabel>Nom de l'institution</RequiredLabel>
               <input className="control" name="otherInstitutionName" required={isOtherInstitution} />
             </label>
           ) : null}
           <label className="field">
-            Direction / Service <RequiredMark />
+            <RequiredLabel>Direction / Service</RequiredLabel>
             <input className="control" name="focalDepartment" required />
           </label>
           <label className="field">
-            Téléphone <RequiredMark />
+            <RequiredLabel>Téléphone</RequiredLabel>
             <input className="control" name="focalPhone" type="tel" required />
           </label>
           <label className="field">
-            Email <RequiredMark />
+            <RequiredLabel>Email</RequiredLabel>
             <input className="control" name="focalEmail" type="email" required />
           </label>
           <label className="field">
@@ -387,7 +395,7 @@ export function RequestForm() {
         </div>
         {isOtherRequestType ? (
           <label className="field">
-            Détails utiles <RequiredMark />
+            <RequiredLabel>Détails utiles</RequiredLabel>
             <textarea className="control" name="requestDetails" required={isOtherRequestType} />
           </label>
         ) : null}
@@ -400,11 +408,11 @@ export function RequestForm() {
         </div>
         <div className="form-grid two">
           <label className="field">
-            Nom de la plateforme <RequiredMark />
+            <RequiredLabel>Nom de la plateforme</RequiredLabel>
             <input className="control" name="platformName" required />
           </label>
           <label className="field">
-            Type de plateforme <RequiredMark />
+            <RequiredLabel>Type de plateforme</RequiredLabel>
             <select className="control" name="platformType" required>
               <option value="">Sélectionner</option>
               {platformTypes.map((type) => (
@@ -415,7 +423,7 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field">
-            Public cible <RequiredMark />
+            <RequiredLabel>Public cible</RequiredLabel>
             <select className="control" name="audience" required>
               <option value="">Sélectionner</option>
               {audienceTypes.map((type) => (
@@ -426,7 +434,7 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field">
-            Niveau de criticité <RequiredMark />
+            <RequiredLabel>Niveau de criticité</RequiredLabel>
             <select className="control" name="criticality" required>
               <option value="">Sélectionner</option>
               {criticalityLevels.map((level) => (
@@ -437,14 +445,14 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field full">
-            Finalité officielle <RequiredMark />
+            <RequiredLabel>Finalité officielle</RequiredLabel>
             <textarea className="control" name="officialPurpose" minLength={10} required />
           </label>
         </div>
         <div className="form-grid">
           {['Nom de domaine souhaité', 'Alternative 1', 'Alternative 2'].map((label, index) => (
             <label className="field" key={label}>
-              {label} {index === 0 ? <RequiredMark /> : null}
+              {index === 0 ? <RequiredLabel>{label}</RequiredLabel> : <span className="field-label">{label}</span>}
               <span className="domain-suffix">
                 <input className="control" name={`prefix${index + 1}`} placeholder="economie" required={index === 0} />
                 <span>.gouv.cd</span>
@@ -461,11 +469,11 @@ export function RequestForm() {
         </div>
         <div className="form-grid two">
           <label className="field">
-            Lettre officielle de demande <RequiredMark />
+            <RequiredLabel>Lettre officielle de demande</RequiredLabel>
             <input className="control" name="officialLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
           </label>
           <label className="field">
-            Lettre de désignation du Point Focal <RequiredMark />
+            <RequiredLabel>Lettre de désignation du Point Focal</RequiredLabel>
             <input className="control" name="designationLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
           </label>
         </div>
@@ -474,7 +482,9 @@ export function RequestForm() {
       <section className="form-section">
         <div>
           <p className="eyebrow">Déclaration</p>
-          <h2>Engagements</h2>
+          <h2>
+            Engagements <RequiredMark />
+          </h2>
         </div>
         <div className="checkbox-grid">
           {[
@@ -485,7 +495,7 @@ export function RequestForm() {
           ].map((text) => (
             <label className="check-item" key={text}>
               <input type="checkbox" required />
-              <span>{text} <RequiredMark /></span>
+              <span>{text}</span>
             </label>
           ))}
         </div>
