@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { Download, FileSearch, Printer, Search, UploadCloud } from 'lucide-react';
-import { PublicTrackedRequest, apiFetch, receiptPdfUrl } from '@/lib/api';
+import { PublicTrackedRequest, apiFetch, displayMinistryName, receiptPdfUrl } from '@/lib/api';
 import { requestTypes } from '@/lib/constants';
 
 const statusSteps = [
@@ -292,7 +292,7 @@ export default function TrackingPage() {
           <div className="tracking-summary-grid">
             <article>
               <span>Ministère / Institution</span>
-              <strong>{trackedRequest.ministry.name}</strong>
+              <strong>{displayMinistryName(trackedRequest)}</strong>
             </article>
             <article>
               <span>Plateforme</span>

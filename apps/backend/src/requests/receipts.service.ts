@@ -98,7 +98,7 @@ export class ReceiptsService {
         ['Email', request.focalEmail],
       ]);
       this.drawSection(doc, 'Informations de la demande', [
-        ['Ministère / Institution', request.ministry.name],
+        ['Ministère / Institution', this.ministryName(request)],
         [
           'Type de demande',
           request.requestTypes.map((type) => this.requestTypeLabel(type)).join(', '),
@@ -206,7 +206,7 @@ export class ReceiptsService {
       'Résumé du dépôt',
       [
         ['Date de dépôt', this.formatDateTime(request.createdAt)],
-        ['Ministère / Institution', request.ministry.name],
+        ['Ministère / Institution', this.ministryName(request)],
         ['Plateforme', request.platformName],
         ['Domaine principal demandé', request.domainChoices[0]?.fullDomain ?? 'Non renseigné'],
       ],
@@ -241,6 +241,12 @@ export class ReceiptsService {
     });
 
     doc.moveDown(0.3);
+  }
+
+  private ministryName(request: ReceiptRequest) {
+    return request.otherInstitutionName
+      ? `${request.ministry.name} - ${request.otherInstitutionName}`
+      : request.ministry.name;
   }
 
   private drawLongTextSection(doc: PDFKit.PDFDocument, title: string, content: string) {
@@ -358,7 +364,7 @@ export class ReceiptsService {
       {
         GOVERNMENT_SUBDOMAIN: 'Nom de domaine gouvernemental',
         HOSTING_SPACE: "Espace d'hébergement",
-        SUBDOMAIN_AND_HOSTING: 'Nom de domaine et hébergement',
+        SUBDOMAIN_AND_HOSTING: 'Domaine + Hébergement',
         RESOURCE_MODIFICATION: 'Modification de ressource existante',
         ACCESS_RESET: 'Réinitialisation des accès',
         OTHER: 'Autre demande',

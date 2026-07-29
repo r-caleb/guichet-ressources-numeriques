@@ -4,6 +4,7 @@ import {
   DocumentType,
   DomainChoiceRank,
   Prisma,
+  RequestType,
   RequestStatus,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
@@ -36,6 +37,21 @@ export class RequestsService {
       throw new BadRequestException('Les deux lettres obligatoires doivent être transmises.');
     }
 
+    const ministry = await this.prisma.ministry.findUnique({
+      where: { id: dto.ministryId },
+      select: { name: true },
+    });
+    if (!ministry) throw new BadRequestException('Le ministère ou institution sélectionné est invalide.');
+
+    const isOtherInstitution = ministry.name.toLowerCase() === 'autre institution publique';
+    if (isOtherInstitution && !dto.otherInstitutionName) {
+      throw new BadRequestException("Le nom de l'institution est obligatoire lorsque Autre institution publique est sélectionné.");
+    }
+
+    if (dto.requestTypes.includes(RequestType.OTHER) && !dto.requestDetails) {
+      throw new BadRequestException("Les détails utiles sont obligatoires lorsque l'objet de la demande est Autre.");
+    }
+
     this.assertDistinctPrefixes([dto.prefix1, dto.prefix2, dto.prefix3]);
     await this.assertPrefixAvailable(dto.prefix1);
     if (dto.prefix2) await this.assertPrefixAvailable(dto.prefix2);
@@ -54,6 +70,7 @@ export class RequestsService {
         focalPhone: dto.focalPhone,
         focalEmail: dto.focalEmail,
         ministryId: dto.ministryId,
+        otherInstitutionName: isOtherInstitution ? dto.otherInstitutionName : undefined,
         requestTypes: dto.requestTypes,
         requestDetails: dto.requestDetails,
         platformName: dto.platformName,
@@ -177,6 +194,7 @@ export class RequestsService {
         accessTransmissionMode: true,
         resourcesCreatedAt: true,
         publicObservation: true,
+        otherInstitutionName: true,
         createdAt: true,
         updatedAt: true,
         domainChoices: true,

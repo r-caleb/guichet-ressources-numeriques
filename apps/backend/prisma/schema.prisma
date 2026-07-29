@@ -126,6 +126,7 @@ model ResourceRequest {
 
   ministryId String
   ministry   Ministry @relation(fields: [ministryId], references: [id])
+  otherInstitutionName String?
 
   requestTypes   RequestType[]
   requestDetails String?

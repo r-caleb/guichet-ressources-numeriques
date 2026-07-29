@@ -85,6 +85,13 @@ export class CreateResourceRequestDto {
   @IsUUID()
   ministryId!: string;
 
+  @ApiPropertyOptional({ example: 'Agence nationale des services numériques' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  @Transform(({ value }) => emptyToUndefined(value))
+  otherInstitutionName?: string;
+
   @ApiProperty({
     enum: RequestType,
     isArray: true,

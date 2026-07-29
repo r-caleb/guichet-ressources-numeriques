@@ -10,6 +10,7 @@ import {
   AdminRequestDetail,
   accessTransmissionOptions,
   adminFetch,
+  displayMinistryName,
   documentDownloadUrl,
   documentTypeLabel,
   formatDateTime,
@@ -162,7 +163,7 @@ export default function AdminRequestDetailPage() {
             </div>
             <div>
               <span>Ministère / Institution</span>
-              <strong>{request.ministry.name}</strong>
+              <strong>{displayMinistryName(request)}</strong>
             </div>
             <div>
               <span>Date de dépôt</span>

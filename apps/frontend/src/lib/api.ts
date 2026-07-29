@@ -28,6 +28,7 @@ export type PublicTrackedRequest = {
   status: string;
   platformName: string;
   requestTypes: string[];
+  otherInstitutionName?: string | null;
   assignedDomain?: string | null;
   accessTransmissionMode?: string | null;
   resourcesCreatedAt?: string | null;
@@ -37,6 +38,10 @@ export type PublicTrackedRequest = {
   domainChoices: PublicDomainChoice[];
   ministry: { name: string };
 };
+
+export function displayMinistryName(value: { ministry: { name: string }; otherInstitutionName?: string | null }) {
+  return value.otherInstitutionName ? `${value.ministry.name} - ${value.otherInstitutionName}` : value.ministry.name;
+}
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, init);

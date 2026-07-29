@@ -363,6 +363,11 @@ button {
   grid-column: 1 / -1;
 }
 
+.required-mark {
+  color: var(--gov-red);
+  font-weight: 900;
+}
+
 .control {
   height: 46px;
   width: 100%;

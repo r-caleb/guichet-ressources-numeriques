@@ -1,4 +1,4 @@
-import { API_BASE_URL, Ministry } from './api';
+import { API_BASE_URL, Ministry, displayMinistryName } from './api';
 
 const TOKEN_KEY = 'grn_admin_token';
 const USER_KEY = 'grn_admin_user';
@@ -81,6 +81,7 @@ export type AdminRequestListItem = {
   assignedDomain?: string | null;
   createdAt: string;
   updatedAt: string;
+  otherInstitutionName?: string | null;
   ministry: Ministry;
   domainChoices: DomainChoice[];
   instructor?: AdminUser | null;
@@ -247,3 +248,5 @@ export function buildAdminQuery(filters: ListRequestsFilters) {
 export function documentDownloadUrl(documentId: string) {
   return `${API_BASE_URL}/admin/documents/${documentId}/download`;
 }
+
+export { displayMinistryName };

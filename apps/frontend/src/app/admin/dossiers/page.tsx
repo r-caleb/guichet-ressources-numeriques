@@ -11,6 +11,7 @@ import {
   PaginatedResponse,
   adminFetch,
   buildAdminQuery,
+  displayMinistryName,
   formatDate,
   getAdminToken,
   statusClassName,
@@ -181,7 +182,7 @@ export default function AdminRequestsPage() {
                     {request.number}
                   </Link>
                 </td>
-                <td>{request.ministry.name}</td>
+                <td>{displayMinistryName(request)}</td>
                 <td>{request.platformName}</td>
                 <td>{request.assignedDomain ?? request.domainChoices[0]?.fullDomain ?? 'Non renseigné'}</td>
                 <td>

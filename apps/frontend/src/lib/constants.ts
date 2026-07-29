@@ -1,9 +1,7 @@
 export const appName = 'Guichet des ressources numériques gouvernementales';
 
 export const requestTypes = [
-  { label: 'Sous-domaine gouvernemental', value: 'GOVERNMENT_SUBDOMAIN' },
-  { label: "Espace d'hébergement", value: 'HOSTING_SPACE' },
-  { label: 'Sous-domaine + Hébergement', value: 'SUBDOMAIN_AND_HOSTING' },
+  { label: 'Domaine + Hébergement', value: 'SUBDOMAIN_AND_HOSTING' },
   { label: 'Modification des ressources existantes', value: 'RESOURCE_MODIFICATION' },
   { label: 'Réinitialisation des accès', value: 'ACCESS_RESET' },
   { label: 'Autre', value: 'OTHER' },

@@ -24,8 +24,18 @@ function optionLabel(options: Array<{ label: string; value: string }>, value: Fo
   return options.find((option) => option.value === value)?.label ?? String(value ?? '');
 }
 
+function RequiredMark() {
+  return (
+    <span className="required-mark" aria-label="obligatoire">
+      *
+    </span>
+  );
+}
+
 export function RequestForm() {
   const [ministries, setMinistries] = useState<Ministry[]>([]);
+  const [selectedMinistryId, setSelectedMinistryId] = useState('');
+  const [selectedRequestType, setSelectedRequestType] = useState('');
   const [ministriesError, setMinistriesError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -49,6 +59,13 @@ export function RequestForm() {
     }));
   }, [ministries]);
 
+  const selectedMinistry = useMemo(
+    () => ministryOptions.find((ministry) => ministry.id === selectedMinistryId),
+    [ministryOptions, selectedMinistryId],
+  );
+  const isOtherInstitution = selectedMinistry?.name.toLowerCase() === 'autre institution publique';
+  const isOtherRequestType = selectedRequestType === 'OTHER';
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
@@ -64,8 +81,18 @@ export function RequestForm() {
     }
 
     try {
-      if (formData.getAll('requestTypes').length === 0) {
-        setError('Veuillez sélectionner au moins un type de demande.');
+      if (!formData.get('requestTypes')) {
+        setError("Veuillez sélectionner l'objet de la demande.");
+        return;
+      }
+
+      if (isOtherInstitution && !String(formData.get('otherInstitutionName') ?? '').trim()) {
+        setError("Veuillez renseigner le nom de l'institution publique.");
+        return;
+      }
+
+      if (isOtherRequestType && !String(formData.get('requestDetails') ?? '').trim()) {
+        setError("Veuillez préciser les détails utiles pour l'objet Autre.");
         return;
       }
 
@@ -74,7 +101,12 @@ export function RequestForm() {
         body: formData,
       });
 
-      const selectedMinistry = ministries.find((ministry) => ministry.id === formData.get('ministryId'));
+      const selectedMinistry = ministryOptions.find((ministry) => ministry.id === formData.get('ministryId'));
+      const otherInstitutionName = String(formData.get('otherInstitutionName') ?? '').trim();
+      const ministryName =
+        selectedMinistry?.name && otherInstitutionName
+          ? `${selectedMinistry.name} - ${otherInstitutionName}`
+          : selectedMinistry?.name ?? '';
       const domains = ['prefix1', 'prefix2', 'prefix3']
         .map((name) => String(formData.get(name) ?? '').trim())
         .filter(Boolean)
@@ -98,7 +130,7 @@ export function RequestForm() {
           .filter(Boolean)
           .join(' '),
         focalFunction: String(formData.get('focalFunction') ?? ''),
-        ministryName: selectedMinistry?.name ?? '',
+        ministryName,
         requestTypes: selectedRequestTypes,
         platformType: optionLabel(platformTypes, formData.get('platformType')),
         audience: optionLabel(audienceTypes, formData.get('audience')),
@@ -109,6 +141,8 @@ export function RequestForm() {
       });
 
       form.reset();
+      setSelectedMinistryId('');
+      setSelectedRequestType('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'La soumission a échoué.');
@@ -273,24 +307,31 @@ export function RequestForm() {
         </div>
         <div className="form-grid">
           <label className="field">
-            Nom
+            Nom <RequiredMark />
             <input className="control" name="focalLastName" required />
           </label>
           <label className="field">
-            Postnom
+            Postnom <RequiredMark />
             <input className="control" name="focalMiddleName" required />
           </label>
           <label className="field">
-            Prénom
+            Prénom <RequiredMark />
             <input className="control" name="focalFirstName" required />
           </label>
           <label className="field">
-            Fonction
+            Fonction <RequiredMark />
             <input className="control" name="focalFunction" required />
           </label>
           <label className="field">
-            Ministère / Institution
-            <select className="control" name="ministryId" required disabled={ministries.length === 0}>
+            Ministère / Institution <RequiredMark />
+            <select
+              className="control"
+              name="ministryId"
+              value={selectedMinistryId}
+              onChange={(event) => setSelectedMinistryId(event.target.value)}
+              required
+              disabled={ministryOptions.length === 0}
+            >
               <option value="">Sélectionner</option>
               {ministryOptions.map((ministry) => (
                 <option key={ministry.name} value={ministry.id}>
@@ -299,20 +340,26 @@ export function RequestForm() {
               ))}
             </select>
           </label>
+          {isOtherInstitution ? (
+            <label className="field">
+              Nom de l'institution <RequiredMark />
+              <input className="control" name="otherInstitutionName" required={isOtherInstitution} />
+            </label>
+          ) : null}
           <label className="field">
-            Direction / Service
+            Direction / Service <RequiredMark />
             <input className="control" name="focalDepartment" required />
           </label>
           <label className="field">
-            Téléphone
+            Téléphone <RequiredMark />
             <input className="control" name="focalPhone" type="tel" required />
           </label>
           <label className="field">
-            Email
+            Email <RequiredMark />
             <input className="control" name="focalEmail" type="email" required />
           </label>
           <label className="field">
-            Contact technique (optionnel)
+            Contact technique (si prestataire externe, mettre son numéro)
             <input className="control" name="technicalContact" />
           </label>
         </div>
@@ -326,15 +373,24 @@ export function RequestForm() {
         <div className="checkbox-grid">
           {requestTypes.map((type) => (
             <label className="check-item" key={type.value}>
-              <input name="requestTypes" type="checkbox" value={type.value} />
+              <input
+                name="requestTypes"
+                type="radio"
+                value={type.value}
+                checked={selectedRequestType === type.value}
+                onChange={(event) => setSelectedRequestType(event.target.value)}
+                required
+              />
               {type.label}
             </label>
           ))}
         </div>
-        <label className="field">
-          Détails utiles
-          <textarea className="control" name="requestDetails" />
-        </label>
+        {isOtherRequestType ? (
+          <label className="field">
+            Détails utiles <RequiredMark />
+            <textarea className="control" name="requestDetails" required={isOtherRequestType} />
+          </label>
+        ) : null}
       </section>
 
       <section className="form-section">
@@ -344,11 +400,11 @@ export function RequestForm() {
         </div>
         <div className="form-grid two">
           <label className="field">
-            Nom de la plateforme
+            Nom de la plateforme <RequiredMark />
             <input className="control" name="platformName" required />
           </label>
           <label className="field">
-            Type de plateforme
+            Type de plateforme <RequiredMark />
             <select className="control" name="platformType" required>
               <option value="">Sélectionner</option>
               {platformTypes.map((type) => (
@@ -359,7 +415,7 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field">
-            Public cible
+            Public cible <RequiredMark />
             <select className="control" name="audience" required>
               <option value="">Sélectionner</option>
               {audienceTypes.map((type) => (
@@ -370,7 +426,7 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field">
-            Niveau de criticité
+            Niveau de criticité <RequiredMark />
             <select className="control" name="criticality" required>
               <option value="">Sélectionner</option>
               {criticalityLevels.map((level) => (
@@ -381,14 +437,14 @@ export function RequestForm() {
             </select>
           </label>
           <label className="field full">
-            Finalité officielle
+            Finalité officielle <RequiredMark />
             <textarea className="control" name="officialPurpose" minLength={10} required />
           </label>
         </div>
         <div className="form-grid">
-          {['Nom de domaine souhaité', 'Alternative 1 (optionnel)', 'Alternative 2 (optionnel)'].map((label, index) => (
+          {['Nom de domaine souhaité', 'Alternative 1', 'Alternative 2'].map((label, index) => (
             <label className="field" key={label}>
-              {label}
+              {label} {index === 0 ? <RequiredMark /> : null}
               <span className="domain-suffix">
                 <input className="control" name={`prefix${index + 1}`} placeholder="economie" required={index === 0} />
                 <span>.gouv.cd</span>
@@ -405,11 +461,11 @@ export function RequestForm() {
         </div>
         <div className="form-grid two">
           <label className="field">
-            Lettre officielle de demande
+            Lettre officielle de demande <RequiredMark />
             <input className="control" name="officialLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
           </label>
           <label className="field">
-            Lettre de désignation du Point Focal
+            Lettre de désignation du Point Focal <RequiredMark />
             <input className="control" name="designationLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
           </label>
         </div>
@@ -429,7 +485,7 @@ export function RequestForm() {
           ].map((text) => (
             <label className="check-item" key={text}>
               <input type="checkbox" required />
-              {text}
+              <span>{text} <RequiredMark /></span>
             </label>
           ))}
         </div>
