@@ -367,6 +367,11 @@ button {
   display: inline-flex;
   align-items: baseline;
   gap: 3px;
+  line-height: 1.35;
+}
+
+.form-grid > .field > .field-label {
+  min-height: 2.45em;
 }
 
 .required-mark {

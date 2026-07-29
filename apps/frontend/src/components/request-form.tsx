@@ -367,7 +367,7 @@ export function RequestForm() {
             <input className="control" name="focalEmail" type="email" required />
           </label>
           <label className="field">
-            Contact technique (si prestataire externe, mettre son numéro)
+            <span className="field-label">Contact technique (si prestataire externe, mettre son numéro)</span>
             <input className="control" name="technicalContact" />
           </label>
         </div>
