@@ -40,6 +40,10 @@ function RequiredLabel({ children }: { children: ReactNode }) {
   );
 }
 
+function fallbackMinistryId(name: string) {
+  return `fallback:${name}`;
+}
+
 export function RequestForm() {
   const [ministries, setMinistries] = useState<Ministry[]>([]);
   const [selectedMinistryId, setSelectedMinistryId] = useState('');
@@ -61,7 +65,7 @@ export function RequestForm() {
     if (ministries.length > 0) return ministries;
 
     return fallbackMinistries.map((name) => ({
-      id: '',
+      id: fallbackMinistryId(name),
       name,
       isActive: true,
     }));
@@ -82,7 +86,9 @@ export function RequestForm() {
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    if (!formData.get('ministryId')) {
+    const ministryId = String(formData.get('ministryId') ?? '');
+
+    if (!ministryId || ministryId.startsWith('fallback:')) {
       setError("Les ministères ne sont pas encore chargés. Vérifiez que l'API backend est lancée.");
       setIsSubmitting(false);
       return;
