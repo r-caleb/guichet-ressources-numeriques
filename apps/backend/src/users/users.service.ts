@@ -15,7 +15,13 @@ export class UsersService {
     email: true,
     firstName: true,
     lastName: true,
+    middleName: true,
     phone: true,
+    functionTitle: true,
+    department: true,
+    ministryId: true,
+    ministry: true,
+    otherInstitutionName: true,
     roles: true,
     isActive: true,
     createdAt: true,
@@ -124,8 +130,9 @@ export class UsersService {
   private assertCanManageRoles(actor: AuthUser, currentRoles: UserRole[], nextRoles?: UserRole[]) {
     if (actor.roles.includes(UserRole.SUPER_ADMIN)) return;
 
-    const managesPrivilegedUser = currentRoles.some((role) => role !== UserRole.AGENT);
-    const grantsPrivilegedRole = nextRoles?.some((role) => role !== UserRole.AGENT) ?? false;
+    const regularRoles: UserRole[] = [UserRole.AGENT, UserRole.POINT_FOCAL];
+    const managesPrivilegedUser = currentRoles.some((role) => !regularRoles.includes(role));
+    const grantsPrivilegedRole = nextRoles?.some((role) => !regularRoles.includes(role)) ?? false;
 
     if (managesPrivilegedUser || grantsPrivilegedRole) {
       throw new ForbiddenException('Seul un Super Administrateur peut gérer les comptes administrateurs.');

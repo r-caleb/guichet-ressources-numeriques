@@ -17,6 +17,12 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
   const router = useRouter();
   const user = getStoredAdminUser();
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Agent';
+  const isPointFocalOnly =
+    user?.roles?.includes('POINT_FOCAL') &&
+    !user.roles.some((role) => ['AGENT', 'ADMIN', 'SUPER_ADMIN'].includes(role));
+  const visibleLinks = isPointFocalOnly
+    ? [{ href: '/admin/point-focal', label: 'Mes dossiers', icon: FileText }]
+    : links;
 
   function handleLogout() {
     clearAdminSession();
@@ -31,7 +37,7 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
           <strong>Ressources numériques</strong>
         </div>
         <nav className="admin-nav" aria-label="Navigation administration">
-          {links.map(({ href, label, icon: Icon }) => (
+          {visibleLinks.map(({ href, label, icon: Icon }) => (
             <Link className={pathname.startsWith(href) ? 'active' : ''} href={href} key={href}>
               <Icon size={17} aria-hidden="true" />
               {label}
@@ -39,7 +45,7 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
           ))}
         </nav>
         <div className="admin-user-card">
-          <span>Session agent</span>
+          <span>{isPointFocalOnly ? 'Session Point Focal' : 'Session agent'}</span>
           <strong>{displayName}</strong>
           <small>{user?.roles?.join(', ') ?? 'Rôle non chargé'}</small>
           <button type="button" onClick={handleLogout}>

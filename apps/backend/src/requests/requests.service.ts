@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import * as argon2 from 'argon2';
 import {
   AuditAction,
   DocumentType,
@@ -6,6 +7,7 @@ import {
   Prisma,
   RequestType,
   RequestStatus,
+  UserRole,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { DocumentsService } from '../documents/documents.service';
@@ -28,6 +30,23 @@ export class RequestsService {
     private readonly documents: DocumentsService,
     private readonly audit: AuditService,
   ) {}
+
+  private readonly safeUserSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    middleName: true,
+    phone: true,
+    functionTitle: true,
+    department: true,
+    ministryId: true,
+    otherInstitutionName: true,
+    roles: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+  } satisfies Prisma.UserSelect;
 
   async create(dto: CreateResourceRequestDto, files: RequestFiles) {
     const officialLetter = files?.officialLetter?.[0];
@@ -131,7 +150,12 @@ export class RequestsService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.resourceRequest.findMany({
         where,
-        include: { ministry: true, domainChoices: true, instructor: true },
+        include: {
+          ministry: true,
+          domainChoices: true,
+          instructor: { select: this.safeUserSelect },
+          pointFocalUser: { select: this.safeUserSelect },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -176,10 +200,103 @@ export class RequestsService {
   async findAdminDetail(id: string) {
     const request = await this.prisma.resourceRequest.findUnique({
       where: { id },
-      include: { ministry: true, domainChoices: true, documents: true, auditEvents: true, instructor: true },
+      include: {
+        ministry: true,
+        domainChoices: true,
+        documents: true,
+        auditEvents: true,
+        instructor: { select: this.safeUserSelect },
+        pointFocalUser: { select: this.safeUserSelect },
+      },
     });
     if (!request) throw new NotFoundException('Dossier introuvable.');
     return request;
+  }
+
+  async createPointFocalAccount(id: string, password: string, actorId?: string) {
+    const request = await this.prisma.resourceRequest.findUnique({
+      where: { id },
+      include: {
+        ministry: true,
+        pointFocalUser: { select: this.safeUserSelect },
+      },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    if (request.pointFocalUser) {
+      return {
+        user: request.pointFocalUser,
+        linkedRequestsCount: 1,
+        alreadyLinked: true,
+      };
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email: request.focalEmail },
+      select: this.safeUserSelect,
+    });
+
+    if (existing && !existing.roles.includes(UserRole.POINT_FOCAL)) {
+      throw new ConflictException(
+        "Cette adresse email est déjà utilisée par un compte qui n'est pas un Point Focal.",
+      );
+    }
+
+    const user = existing
+      ? await this.prisma.user.update({
+          where: { id: existing.id },
+          select: this.safeUserSelect,
+          data: {
+            firstName: request.focalFirstName,
+            lastName: request.focalLastName,
+            middleName: request.focalMiddleName,
+            phone: request.focalPhone,
+            functionTitle: request.focalFunction,
+            department: request.focalDepartment,
+            ministryId: request.ministryId,
+            otherInstitutionName: request.otherInstitutionName,
+            isActive: true,
+          },
+        })
+      : await this.prisma.user.create({
+          select: this.safeUserSelect,
+          data: {
+            email: request.focalEmail,
+            password: await argon2.hash(password),
+            firstName: request.focalFirstName,
+            lastName: request.focalLastName,
+            middleName: request.focalMiddleName,
+            phone: request.focalPhone,
+            functionTitle: request.focalFunction,
+            department: request.focalDepartment,
+            ministryId: request.ministryId,
+            otherInstitutionName: request.otherInstitutionName,
+            roles: [UserRole.POINT_FOCAL],
+            isActive: true,
+          },
+        });
+
+    const linked = await this.prisma.resourceRequest.updateMany({
+      where: {
+        focalEmail: request.focalEmail,
+        pointFocalUserId: null,
+      },
+      data: { pointFocalUserId: user.id },
+    });
+
+    await this.audit.record({
+      action: AuditAction.ADMIN_NOTE_ADDED,
+      actorId,
+      requestId: request.id,
+      message: `Compte Point Focal créé pour ${request.focalEmail}.`,
+      metadata: { pointFocalUserId: user.id, linkedRequestsCount: linked.count },
+    });
+
+    return {
+      user,
+      linkedRequestsCount: linked.count,
+      alreadyLinked: false,
+    };
   }
 
   async track(dto: TrackRequestDto) {
@@ -203,6 +320,19 @@ export class RequestsService {
     });
     if (!request) throw new NotFoundException('Aucun dossier trouvé avec ces informations.');
     return request;
+  }
+
+  async listForPointFocal(userId: string) {
+    return this.prisma.resourceRequest.findMany({
+      where: { pointFocalUserId: userId },
+      include: {
+        ministry: true,
+        domainChoices: true,
+        instructor: { select: this.safeUserSelect },
+        pointFocalUser: { select: this.safeUserSelect },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async addAdditionalDocuments(dto: AdditionalDocumentsDto, files: Express.Multer.File[]) {

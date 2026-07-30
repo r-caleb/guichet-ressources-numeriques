@@ -22,6 +22,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { AdditionalDocumentsDto } from './dto/additional-documents.dto';
 import { CheckDomainQueryDto } from './dto/check-domain.query.dto';
+import { CreatePointFocalAccountDto } from './dto/create-point-focal-account.dto';
 import { CreateResourceRequestDto } from './dto/create-resource-request.dto';
 import { ListRequestsQueryDto } from './dto/list-requests.query.dto';
 import { ReceiptRequestDto } from './dto/receipt-request.dto';
@@ -197,6 +198,18 @@ export class RequestsController {
     return this.requests.checkDomainAvailability(query.prefix);
   }
 
+  @Get('me')
+  @ApiOperation({
+    summary: 'Lister les dossiers du Point Focal connecté',
+    description: "Retourne les demandes rattachées au compte Point Focal authentifié.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.POINT_FOCAL)
+  listMyRequests(@Req() req: AuthedRequest) {
+    return this.requests.listForPointFocal(req.user?.userId ?? '');
+  }
+
   @Get('admin')
   @ApiOperation({
     summary: 'Lister les demandes côté administration',
@@ -219,6 +232,23 @@ export class RequestsController {
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   findAdminDetail(@Param('id') id: string) {
     return this.requests.findAdminDetail(id);
+  }
+
+  @Post('admin/:id/point-focal-account')
+  @ApiOperation({
+    summary: 'Créer le compte Point Focal depuis un dossier',
+    description:
+      "Crée un compte connecté Point Focal avec les informations du dossier et rattache les autres demandes du même email. Le mot de passe temporaire est transmis manuellement par l'administration.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  createPointFocalAccount(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Body() dto: CreatePointFocalAccountDto,
+  ) {
+    return this.requests.createPointFocalAccount(id, dto.password, req.user?.userId);
   }
 
   @Patch('admin/:id/status')

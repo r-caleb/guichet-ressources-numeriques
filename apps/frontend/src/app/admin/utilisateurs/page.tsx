@@ -8,6 +8,7 @@ import { AdminAccount, UserRole, adminFetch, formatDate, getAdminToken } from '@
 
 const roleLabels: Record<UserRole, string> = {
   AGENT: 'Agent',
+  POINT_FOCAL: 'Point Focal',
   ADMIN: 'Administrateur',
   SUPER_ADMIN: 'Super administrateur',
 };
@@ -213,6 +214,7 @@ export default function AdminUsersPage() {
               Rôle
               <select className="control" name="role" defaultValue={primaryRole(editingUser)}>
                 <option value="AGENT">Agent</option>
+                <option value="POINT_FOCAL">Point Focal</option>
                 <option value="ADMIN">Administrateur</option>
                 <option value="SUPER_ADMIN">Super administrateur</option>
               </select>
@@ -244,6 +246,7 @@ export default function AdminUsersPage() {
               Rôle
               <select className="control" name="role" defaultValue="AGENT">
                 <option value="AGENT">Agent</option>
+                <option value="POINT_FOCAL">Point Focal</option>
                 <option value="ADMIN">Administrateur</option>
                 <option value="SUPER_ADMIN">Super administrateur</option>
               </select>

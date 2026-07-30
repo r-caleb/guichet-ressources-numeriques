@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Save } from 'lucide-react';
+import { ArrowLeft, Download, Save, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
@@ -59,6 +59,7 @@ export default function AdminRequestDetailPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingPointFocal, setIsCreatingPointFocal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -134,6 +135,41 @@ export default function AdminRequestDetailPage() {
       URL.revokeObjectURL(url);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Téléchargement impossible.');
+    }
+  }
+
+  async function handleCreatePointFocalAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!request) return;
+
+    setError('');
+    setSuccess('');
+    setIsCreatingPointFocal(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const result = await adminFetch<{
+        user: NonNullable<AdminRequestDetail['pointFocalUser']>;
+        linkedRequestsCount: number;
+        alreadyLinked: boolean;
+      }>(`/requests/admin/${request.id}/point-focal-account`, {
+        method: 'POST',
+        body: JSON.stringify({ password: formData.get('password') }),
+      });
+
+      setRequest((current) => (current ? { ...current, pointFocalUser: result.user } : current));
+      form.reset();
+      setSuccess(
+        result.alreadyLinked
+          ? 'Ce dossier est déjà lié à un compte Point Focal.'
+          : `Compte Point Focal créé. ${result.linkedRequestsCount} dossier(s) lié(s).`,
+      );
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : "Le compte Point Focal n'a pas été créé.");
+    } finally {
+      setIsCreatingPointFocal(false);
     }
   }
 
@@ -239,6 +275,28 @@ export default function AdminRequestDetailPage() {
                     <dd>{request.focalEmail}</dd>
                   </div>
                 </dl>
+                {request.pointFocalUser ? (
+                  <div className="admin-linked-account">
+                    <span>Compte connecté</span>
+                    <strong>
+                      {request.pointFocalUser.firstName} {request.pointFocalUser.lastName}
+                    </strong>
+                    <small>
+                      {request.pointFocalUser.email} - {request.pointFocalUser.isActive ? 'Actif' : 'Désactivé'}
+                    </small>
+                  </div>
+                ) : (
+                  <form className="point-focal-account-form" onSubmit={handleCreatePointFocalAccount}>
+                    <label className="field">
+                      Mot de passe temporaire
+                      <input className="control" name="password" type="password" minLength={8} required />
+                    </label>
+                    <button className="button secondary" type="submit" disabled={isCreatingPointFocal}>
+                      <UserPlus size={18} aria-hidden="true" />
+                      {isCreatingPointFocal ? 'Création...' : 'Créer le compte Point Focal'}
+                    </button>
+                  </form>
+                )}
               </section>
 
               <section className="admin-section">

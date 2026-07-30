@@ -3,7 +3,7 @@ import { API_BASE_URL, Ministry, displayMinistryName } from './api';
 const TOKEN_KEY = 'grn_admin_token';
 const USER_KEY = 'grn_admin_user';
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'AGENT';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'AGENT' | 'POINT_FOCAL';
 
 export type AdminUser = {
   id?: string;
@@ -19,7 +19,12 @@ export type AdminAccount = {
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string | null;
   phone?: string | null;
+  functionTitle?: string | null;
+  department?: string | null;
+  ministryId?: string | null;
+  otherInstitutionName?: string | null;
   roles: UserRole[];
   isActive: boolean;
   createdAt: string;
@@ -85,6 +90,7 @@ export type AdminRequestListItem = {
   ministry: Ministry;
   domainChoices: DomainChoice[];
   instructor?: AdminUser | null;
+  pointFocalUser?: AdminAccount | null;
 };
 
 export type PaginatedResponse<T> = {

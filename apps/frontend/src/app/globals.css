@@ -1247,6 +1247,92 @@ input[type='file'].control {
   color: var(--gov-blue);
 }
 
+.admin-linked-account,
+.point-focal-account-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px;
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.admin-linked-account span {
+  color: var(--gov-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-linked-account strong {
+  color: var(--gov-navy);
+}
+
+.admin-linked-account small {
+  color: var(--gov-muted);
+  font-weight: 700;
+}
+
+.point-focal-request-list {
+  display: grid;
+  gap: 10px;
+}
+
+.point-focal-request-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.6fr) auto minmax(170px, 0.8fr) minmax(130px, 0.7fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  background: #fbfdff;
+  border: 1px solid var(--gov-line);
+  border-radius: var(--gov-radius);
+}
+
+.point-focal-request-card > div:not(.point-focal-request-main) {
+  display: grid;
+  gap: 4px;
+}
+
+.point-focal-request-card span:not(.status),
+.point-focal-request-main span {
+  color: var(--gov-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.point-focal-request-card strong {
+  color: var(--gov-navy);
+}
+
+.point-focal-request-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.point-focal-request-main svg {
+  flex: 0 0 auto;
+  color: var(--gov-blue);
+}
+
+.point-focal-request-main div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.point-focal-request-main small {
+  overflow: hidden;
+  color: var(--gov-muted);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dossier-header {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr 1fr;
@@ -1731,7 +1817,8 @@ th {
   .dossier-header,
   .dossier-layout,
   .dossier-workspace,
-  .document-grid {
+  .document-grid,
+  .point-focal-request-card {
     grid-template-columns: 1fr;
   }
 

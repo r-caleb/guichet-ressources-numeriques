@@ -10,6 +10,7 @@ enum UserRole {
   SUPER_ADMIN
   ADMIN
   AGENT
+  POINT_FOCAL
 }
 
 enum RequestStatus {
@@ -88,11 +89,18 @@ model User {
   password  String
   firstName String
   lastName  String
+  middleName String?
   phone     String?
+  functionTitle String?
+  department String?
+  ministryId String?
+  ministry   Ministry? @relation("UserMinistry", fields: [ministryId], references: [id])
+  otherInstitutionName String?
   roles     UserRole[] @default([AGENT])
   isActive  Boolean    @default(true)
 
   instructedRequests ResourceRequest[] @relation("RequestInstructor")
+  focalRequests      ResourceRequest[] @relation("PointFocalRequests")
   auditEvents        AuditEvent[]
 
   createdAt DateTime @default(now())
@@ -107,6 +115,7 @@ model Ministry {
   isActive    Boolean @default(true)
 
   requests ResourceRequest[]
+  users    User[] @relation("UserMinistry")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,6 +154,9 @@ model ResourceRequest {
   instructorId String?
   instructor   User?   @relation("RequestInstructor", fields: [instructorId], references: [id])
 
+  pointFocalUserId String?
+  pointFocalUser   User? @relation("PointFocalRequests", fields: [pointFocalUserId], references: [id])
+
   assignedDomain       String?
   hostingAssigned      Boolean @default(false)
   resourcesCreatedAt   DateTime?
@@ -163,6 +175,7 @@ model ResourceRequest {
 
   @@index([status])
   @@index([ministryId])
+  @@index([pointFocalUserId])
   @@index([createdAt])
 }
 

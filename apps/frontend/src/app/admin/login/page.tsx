@@ -29,7 +29,10 @@ export default function AdminLoginPage() {
       });
 
       storeAdminSession(session);
-      router.replace('/admin/dashboard');
+      const isPointFocalOnly =
+        session.user.roles.includes('POINT_FOCAL') &&
+        !session.user.roles.some((role) => ['AGENT', 'ADMIN', 'SUPER_ADMIN'].includes(role));
+      router.replace(isPointFocalOnly ? '/admin/point-focal' : '/admin/dashboard');
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Connexion impossible.');
     } finally {
@@ -43,10 +46,10 @@ export default function AdminLoginPage() {
         <div className="admin-login-badge">
           <ShieldCheck size={22} aria-hidden="true" />
         </div>
-        <p className="eyebrow">Administration</p>
-        <h1>Connexion agent</h1>
+        <p className="eyebrow">Espace sécurisé</p>
+        <h1>Connexion utilisateur</h1>
         <p>
-          Accès réservé aux agents habilités du Secrétariat Général de l'Économie Numérique.
+          Accès réservé aux agents habilités et aux Points Focaux enregistrés.
         </p>
 
         <form className="admin-login-form" onSubmit={handleSubmit}>
