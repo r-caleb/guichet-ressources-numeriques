@@ -21,6 +21,10 @@ function conversationTitle(conversation: ChatConversation) {
   return conversation.subject ?? 'Conversation générale';
 }
 
+function conversationTypeLabel(conversation: ChatConversation) {
+  return conversation.type === 'GENERAL' ? 'Conversation générale' : conversation.request?.number ?? 'Dossier';
+}
+
 function lastMessageText(conversation: ChatConversation) {
   const lastMessage = conversation.messages[0];
   if (!lastMessage) return 'Aucun message.';
@@ -94,11 +98,11 @@ export default function AdminMessagesPage() {
         </div>
         <div>
           <span>Type actif</span>
-          <strong>Dossiers</strong>
+          <strong>Dossiers + général</strong>
         </div>
         <div>
           <span>Chat général</span>
-          <strong>Bientôt</strong>
+          <strong>Actif</strong>
         </div>
       </section>
 
@@ -121,7 +125,7 @@ export default function AdminMessagesPage() {
                   });
                 }}
               >
-                <span>{conversation.request ? conversation.request.number : 'Conversation générale'}</span>
+                <span>{conversationTypeLabel(conversation)}</span>
                 <strong>{conversation.request?.platformName ?? conversation.subject ?? 'Question générale'}</strong>
                 <small>{lastMessageText(conversation)}</small>
                 <em>{formatDateTime(conversation.lastMessageAt ?? conversation.createdAt)}</em>
@@ -140,11 +144,19 @@ export default function AdminMessagesPage() {
             <>
               <div className="messages-detail-header">
                 <div>
-                  <p className="eyebrow">Conversation du dossier</p>
+                  <p className="eyebrow">
+                    {selectedConversation.type === 'GENERAL' ? 'Conversation générale' : 'Conversation du dossier'}
+                  </p>
                   <h2>{conversationTitle(selectedConversation)}</h2>
                   {selectedConversation.request ? (
                     <small>{displayMinistryName(selectedConversation.request)}</small>
-                  ) : null}
+                  ) : (
+                    <small>
+                      {[selectedConversation.pointFocalUser.firstName, selectedConversation.pointFocalUser.lastName]
+                        .filter(Boolean)
+                        .join(' ') || selectedConversation.pointFocalUser.email}
+                    </small>
+                  )}
                 </div>
                 <div className="messages-detail-actions">
                   {selectedConversation.request ? (
@@ -156,9 +168,13 @@ export default function AdminMessagesPage() {
                       Dossier
                     </Link>
                   ) : null}
-                  <span className={statusClassName(selectedConversation.request?.status ?? 'UNDER_REVIEW')}>
-                    {selectedConversation.request ? statusLabel(selectedConversation.request.status) : 'Conversation'}
-                  </span>
+                  {selectedConversation.request ? (
+                    <span className={statusClassName(selectedConversation.request.status)}>
+                      {statusLabel(selectedConversation.request.status)}
+                    </span>
+                  ) : (
+                    <span className="status status-under-review">Général</span>
+                  )}
                 </div>
               </div>
 

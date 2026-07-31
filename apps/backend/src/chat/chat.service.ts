@@ -45,7 +45,7 @@ export class ChatService {
 
   async listAdminConversations() {
     return this.prisma.conversation.findMany({
-      where: { type: ConversationType.REQUEST },
+      where: { lastMessageAt: { not: null } },
       include: {
         request: { include: { ministry: true, domainChoices: true } },
         pointFocalUser: { select: this.safeUserSelect },
@@ -80,6 +80,17 @@ export class ChatService {
     files: Express.Multer.File[],
   ) {
     const conversation = await this.ensureRequestConversation(requestId, userId);
+    await this.createMessage(conversation.id, userId, dto, files);
+    return this.findPointFocalConversation(conversation.id, userId);
+  }
+
+  async findPointFocalGeneralConversation(userId: string) {
+    const conversation = await this.ensureGeneralConversation(userId);
+    return this.findPointFocalConversation(conversation.id, userId);
+  }
+
+  async sendPointFocalGeneralMessage(userId: string, dto: SendMessageDto, files: Express.Multer.File[]) {
+    const conversation = await this.ensureGeneralConversation(userId);
     await this.createMessage(conversation.id, userId, dto, files);
     return this.findPointFocalConversation(conversation.id, userId);
   }
@@ -151,6 +162,43 @@ export class ChatService {
         requestId: request.id,
         pointFocalUserId,
         subject: `${request.number} - ${request.platformName}`,
+      },
+    });
+  }
+
+  private async ensureGeneralConversation(pointFocalUserId: string) {
+    const pointFocal = await this.prisma.user.findFirst({
+      where: {
+        id: pointFocalUserId,
+        roles: { has: UserRole.POINT_FOCAL },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+    if (!pointFocal) throw new NotFoundException('Point Focal introuvable.');
+
+    const existing = await this.prisma.conversation.findFirst({
+      where: {
+        type: ConversationType.GENERAL,
+        pointFocalUserId,
+      },
+      select: { id: true },
+    });
+    if (existing) return existing;
+
+    const displayName = [pointFocal.firstName, pointFocal.lastName].filter(Boolean).join(' ') || pointFocal.email;
+
+    return this.prisma.conversation.create({
+      select: { id: true },
+      data: {
+        type: ConversationType.GENERAL,
+        pointFocalUserId,
+        subject: `Conversation générale - ${displayName}`,
       },
     });
   }

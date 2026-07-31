@@ -51,6 +51,10 @@ export default function PointFocalDashboardPage() {
           <PlusCircle size={18} aria-hidden="true" />
           Nouvelle demande
         </Link>
+        <Link className="button secondary" href="/admin/point-focal/messages">
+          <MessageSquare size={18} aria-hidden="true" />
+          Message général
+        </Link>
       </div>
 
       {error ? <p className="form-alert">{error}</p> : null}
@@ -66,7 +70,7 @@ export default function PointFocalDashboardPage() {
         </div>
         <div>
           <span>Messagerie</span>
-          <strong>Bientôt</strong>
+          <strong>Active</strong>
         </div>
       </section>
 

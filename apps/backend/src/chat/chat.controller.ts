@@ -47,6 +47,37 @@ const messageBodySchema = {
 export class ChatController {
   constructor(private readonly chat: ChatService) {}
 
+  @Get('general')
+  @ApiOperation({
+    summary: 'Lire la conversation générale',
+    description: 'Retourne la conversation générale entre le Point Focal connecté et le service instructeur.',
+  })
+  @Roles(UserRole.POINT_FOCAL)
+  findPointFocalGeneralConversation(@Req() req: AuthedRequest) {
+    return this.chat.findPointFocalGeneralConversation(req.user.userId);
+  }
+
+  @Post('general/messages')
+  @ApiOperation({
+    summary: 'Envoyer un message général',
+    description: "Permet au Point Focal connecté d'écrire au service sans rattacher le message à un dossier.",
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(messageBodySchema)
+  @Roles(UserRole.POINT_FOCAL)
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'attachments', maxCount: 5 }], {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  sendPointFocalGeneralMessage(
+    @Req() req: AuthedRequest,
+    @Body() dto: SendMessageDto,
+    @UploadedFiles() files: { attachments?: Express.Multer.File[] },
+  ) {
+    return this.chat.sendPointFocalGeneralMessage(req.user.userId, dto, files.attachments ?? []);
+  }
+
   @Get('requests/:requestId')
   @ApiOperation({
     summary: "Lire la conversation d'un dossier",

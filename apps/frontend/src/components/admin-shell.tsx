@@ -22,7 +22,10 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
     user?.roles?.includes('POINT_FOCAL') &&
     !user.roles.some((role) => ['AGENT', 'ADMIN', 'SUPER_ADMIN'].includes(role));
   const visibleLinks = isPointFocalOnly
-    ? [{ href: '/admin/point-focal', label: 'Mes dossiers', icon: FileText }]
+    ? [
+        { href: '/admin/point-focal', label: 'Mes dossiers', icon: FileText },
+        { href: '/admin/point-focal/messages', label: 'Message général', icon: MessageSquare },
+      ]
     : links;
 
   function handleLogout() {
