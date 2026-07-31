@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, MessageSquare, Save, UserPlus } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Save, UserCheck, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import { ChatPanel } from '@/components/chat-panel';
 import { TemporaryPasswordField } from '@/components/temporary-password-field';
@@ -19,6 +19,7 @@ import {
   documentTypeLabel,
   formatDateTime,
   getAdminToken,
+  getStoredAdminUser,
   statusClassName,
   statusLabel,
   statusOptions,
@@ -54,6 +55,11 @@ function actorName(actor?: AdminAccount | null) {
   return [actor.firstName, actor.lastName].filter(Boolean).join(' ') || actor.email;
 }
 
+function userName(user?: { firstName?: string | null; lastName?: string | null; email: string } | null) {
+  if (!user) return 'Non assigné';
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+}
+
 function actorRole(actor?: AdminAccount | null) {
   if (!actor) return 'Action système';
   const roleLabels: Record<string, string> = {
@@ -79,6 +85,8 @@ export default function AdminRequestDetailPage() {
   const router = useRouter();
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
+  const [assignableUsers, setAssignableUsers] = useState<AdminAccount[]>([]);
+  const [assignmentValue, setAssignmentValue] = useState('');
   const [form, setForm] = useState({
     status: '',
     assignedDomain: '',
@@ -88,10 +96,14 @@ export default function AdminRequestDetailPage() {
     rejectionReason: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreatingPointFocal, setIsCreatingPointFocal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const currentUser = getStoredAdminUser();
+  const canAssign = currentUser?.roles.some((role) => ['SUPER_ADMIN', 'ADMIN'].includes(role)) ?? false;
+  const canAssignAdministrators = currentUser?.roles.includes('SUPER_ADMIN') ?? false;
 
   useEffect(() => {
     if (!getAdminToken()) {
@@ -102,6 +114,7 @@ export default function AdminRequestDetailPage() {
     adminFetch<AdminRequestDetail>(`/requests/admin/${params.id}`)
       .then((result) => {
         setRequest(result);
+        setAssignmentValue(result.instructor?.id ?? result.instructor?.userId ?? '');
         setForm({
           status: result.status,
           assignedDomain: result.assignedDomain ?? '',
@@ -121,6 +134,46 @@ export default function AdminRequestDetailPage() {
       })
       .finally(() => setIsLoading(false));
   }, [params.id, router]);
+
+  useEffect(() => {
+    if (!canAssign) return;
+
+    adminFetch<AdminAccount[]>('/admin/users')
+      .then((users) => {
+        setAssignableUsers(
+          users.filter((user) => {
+            if (!user.isActive || user.roles.includes('POINT_FOCAL')) return false;
+            if (canAssignAdministrators && user.roles.includes('ADMIN')) return true;
+            return user.roles.includes('AGENT');
+          }),
+        );
+      })
+      .catch(() => setAssignableUsers([]));
+  }, [canAssign, canAssignAdministrators]);
+
+  async function handleAssign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!request) return;
+
+    setError('');
+    setSuccess('');
+    setIsAssigning(true);
+
+    try {
+      const updated = await adminFetch<AdminRequestDetail>(`/requests/admin/${request.id}/assignment`, {
+        method: 'PATCH',
+        body: JSON.stringify({ instructorId: assignmentValue || null }),
+      });
+
+      setRequest(updated);
+      setAssignmentValue(updated.instructor?.id ?? updated.instructor?.userId ?? '');
+      setSuccess(assignmentValue ? 'Assignation enregistrée.' : 'Dossier désassigné.');
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : "L'assignation n'a pas été enregistrée.");
+    } finally {
+      setIsAssigning(false);
+    }
+  }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -389,6 +442,45 @@ export default function AdminRequestDetailPage() {
             </div>
 
             <div className="dossier-stack">
+              <section className="admin-section assignment-section">
+                <div className="admin-section-title">
+                  <h2>Assignation</h2>
+                  <span className="admin-count">
+                    <UserCheck size={17} aria-hidden="true" />
+                    {request.instructor ? 'Assigné' : 'Non assigné'}
+                  </span>
+                </div>
+                <dl className="admin-definition-list assignment-definition-list">
+                  <div>
+                    <dt>Responsable du dossier</dt>
+                    <dd>{userName(request.instructor)}</dd>
+                  </div>
+                </dl>
+                {canAssign ? (
+                  <form className="assignment-form" onSubmit={handleAssign}>
+                    <label className="field">
+                      Attribuer à
+                      <select
+                        className="control"
+                        value={assignmentValue}
+                        onChange={(event) => setAssignmentValue(event.target.value)}
+                      >
+                        <option value="">Non assigné</option>
+                        {assignableUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {userName(user)} - {actorRole(user)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className="button secondary" type="submit" disabled={isAssigning}>
+                      <UserCheck size={18} aria-hidden="true" />
+                      {isAssigning ? 'Assignation...' : "Enregistrer l'assignation"}
+                    </button>
+                  </form>
+                ) : null}
+              </section>
+
               <section className="admin-section">
                 <div className="admin-section-title">
                   <h2>Instruction</h2>

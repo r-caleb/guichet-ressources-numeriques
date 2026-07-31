@@ -23,6 +23,7 @@ type Filters = {
   search: string;
   status: string;
   ministryId: string;
+  assignedToMe: boolean;
   page: number;
   limit: number;
 };
@@ -32,9 +33,15 @@ const initialFilters: Filters = {
   search: '',
   status: '',
   ministryId: '',
+  assignedToMe: false,
   page: 1,
   limit: requestsPerPage,
 };
+
+function userDisplayName(user?: AdminRequestListItem['instructor']) {
+  if (!user) return 'Non assigné';
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+}
 
 export default function AdminRequestsPage() {
   const router = useRouter();
@@ -147,6 +154,16 @@ export default function AdminRequestsPage() {
             ))}
           </select>
         </label>
+        <label className="admin-filter-check">
+          <input
+            type="checkbox"
+            checked={filters.assignedToMe}
+            onChange={(event) =>
+              setFilters((current) => ({ ...current, assignedToMe: event.target.checked }))
+            }
+          />
+          Mes dossiers
+        </label>
         <div className="admin-filter-actions">
           <button className="button secondary" type="button" onClick={handleReset}>
             <RefreshCw size={17} aria-hidden="true" />
@@ -170,6 +187,7 @@ export default function AdminRequestsPage() {
               <th>Plateforme</th>
               <th>Domaine</th>
               <th>Statut</th>
+              <th>Assigné à</th>
               <th>Date</th>
               <th>Action</th>
             </tr>
@@ -188,6 +206,7 @@ export default function AdminRequestsPage() {
                 <td>
                   <span className={statusClassName(request.status)}>{statusLabel(request.status)}</span>
                 </td>
+                <td>{userDisplayName(request.instructor)}</td>
                 <td>{formatDate(request.createdAt)}</td>
                 <td>
                   <Link className="icon-action" href={`/admin/dossiers/${request.id}`} aria-label="Ouvrir le dossier">
@@ -198,12 +217,12 @@ export default function AdminRequestsPage() {
             ))}
             {!isLoading && requests.length === 0 ? (
               <tr>
-                <td colSpan={7}>Aucun dossier ne correspond aux critères sélectionnés.</td>
+                <td colSpan={8}>Aucun dossier ne correspond aux critères sélectionnés.</td>
               </tr>
             ) : null}
             {isLoading ? (
               <tr>
-                <td colSpan={7}>Chargement des dossiers...</td>
+                <td colSpan={8}>Chargement des dossiers...</td>
               </tr>
             ) : null}
           </tbody>

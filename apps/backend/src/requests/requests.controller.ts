@@ -22,6 +22,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { DocumentsService } from '../documents/documents.service';
 import { AdditionalDocumentsDto } from './dto/additional-documents.dto';
+import { AssignRequestDto } from './dto/assign-request.dto';
 import { CheckDomainQueryDto } from './dto/check-domain.query.dto';
 import { CreatePointFocalAccountDto } from './dto/create-point-focal-account.dto';
 import { CreateResourceRequestDto } from './dto/create-resource-request.dto';
@@ -300,8 +301,8 @@ export class RequestsController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  listAdmin(@Query() query: ListRequestsQueryDto) {
-    return this.requests.list(query);
+  listAdmin(@Req() req: AuthedRequest, @Query() query: ListRequestsQueryDto) {
+    return this.requests.list(query, req.user);
   }
 
   @Get('admin/:id')
@@ -312,8 +313,8 @@ export class RequestsController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  findAdminDetail(@Param('id') id: string) {
-    return this.requests.findAdminDetail(id);
+  findAdminDetail(@Req() req: AuthedRequest, @Param('id') id: string) {
+    return this.requests.findAdminDetail(id, req.user);
   }
 
   @Post('admin/:id/point-focal-account')
@@ -333,6 +334,19 @@ export class RequestsController {
     return this.requests.createPointFocalAccount(id, dto.password, req.user?.userId);
   }
 
+  @Patch('admin/:id/assignment')
+  @ApiOperation({
+    summary: 'Assigner un dossier',
+    description:
+      "Attribue explicitement un dossier à un administrateur ou agent. L'assignation est séparée de l'auteur des actions d'instruction.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  assignInstructor(@Req() req: AuthedRequest, @Param('id') id: string, @Body() dto: AssignRequestDto) {
+    return this.requests.assignInstructor(id, dto.instructorId ?? null, req.user as AuthUser);
+  }
+
   @Patch('admin/:id/status')
   @ApiOperation({
     summary: "Changer le statut d'une demande",
@@ -343,6 +357,6 @@ export class RequestsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   updateStatus(@Req() req: AuthedRequest, @Param('id') id: string, @Body() dto: UpdateRequestStatusDto) {
-    return this.requests.updateStatus(id, dto, req.user?.userId);
+    return this.requests.updateStatus(id, dto, req.user);
   }
 }

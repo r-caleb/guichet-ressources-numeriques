@@ -1100,7 +1100,7 @@ input[type='file'].control {
 
 .admin-filter-bar {
   display: grid;
-  grid-template-columns: minmax(190px, 1.2fr) minmax(180px, 0.8fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(190px, 1.2fr) minmax(180px, 0.8fr) minmax(220px, 1fr) minmax(128px, 0.5fr) auto;
   gap: 12px;
   align-items: end;
   padding: 16px;
@@ -1109,13 +1109,33 @@ input[type='file'].control {
   border-radius: var(--gov-radius);
 }
 
+.admin-filter-check {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--gov-navy);
+  font-size: 0.85rem;
+  font-weight: 900;
+  background: #ffffff;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.admin-filter-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gov-blue);
+}
+
 .admin-filter-actions {
   display: flex;
   gap: 10px;
 }
 
 .admin-table-shell table {
-  min-width: 920px;
+  min-width: 1040px;
 }
 
 .pagination-bar {
@@ -1279,9 +1299,23 @@ input[type='file'].control {
 }
 
 .admin-login-form,
-.instruction-form {
+.instruction-form,
+.assignment-form {
   display: grid;
   gap: 14px;
+}
+
+.assignment-section {
+  align-content: start;
+}
+
+.assignment-definition-list div {
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
 }
 
 .admin-inline-form {

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import {
   AccessTransmissionMode,
@@ -11,6 +11,7 @@ import {
   UserRole,
 } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { AuthUser } from '../auth/auth.types';
 import { DocumentsService } from '../documents/documents.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdditionalDocumentsDto } from './dto/additional-documents.dto';
@@ -128,12 +129,17 @@ export class RequestsService {
     return this.findPublicReceipt(number);
   }
 
-  async list(query: ListRequestsQueryDto) {
+  async list(query: ListRequestsQueryDto, actor?: AuthUser) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const isAgentOnly =
+      !!actor &&
+      actor.roles.includes(UserRole.AGENT) &&
+      !actor.roles.some((role) => role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN);
     const where: Prisma.ResourceRequestWhereInput = {
       status: query.status,
       ministryId: query.ministryId,
+      instructorId: isAgentOnly || query.assignedToMe ? actor?.userId : query.instructorId,
       createdAt: {
         gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
         lte: query.dateTo ? new Date(query.dateTo) : undefined,
@@ -199,7 +205,7 @@ export class RequestsService {
     };
   }
 
-  async findAdminDetail(id: string) {
+  async findAdminDetail(id: string, actor?: AuthUser) {
     const request = await this.prisma.resourceRequest.findUnique({
       where: { id },
       include: {
@@ -217,6 +223,15 @@ export class RequestsService {
       },
     });
     if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    const isAgentOnly =
+      !!actor &&
+      actor.roles.includes(UserRole.AGENT) &&
+      !actor.roles.some((role) => role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN);
+    if (isAgentOnly && request.instructorId !== actor?.userId) {
+      throw new ForbiddenException('Ce dossier ne vous est pas assigné.');
+    }
+
     return request;
   }
 
@@ -304,6 +319,68 @@ export class RequestsService {
       linkedRequestsCount: linked.count,
       alreadyLinked: false,
     };
+  }
+
+  async assignInstructor(id: string, instructorId: string | null, actor: AuthUser) {
+    const request = await this.prisma.resourceRequest.findUnique({
+      where: { id },
+      include: {
+        instructor: { select: this.safeUserSelect },
+      },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    if (!instructorId) {
+      await this.prisma.resourceRequest.update({
+        where: { id },
+        data: { instructorId: null },
+      });
+
+      await this.audit.record({
+        action: AuditAction.ADMIN_NOTE_ADDED,
+        actorId: actor.userId,
+        requestId: id,
+        message: 'Dossier désassigné.',
+        metadata: { previousInstructorId: request.instructorId },
+      });
+
+      return this.findAdminDetail(id);
+    }
+
+    const instructor = await this.prisma.user.findUnique({
+      where: { id: instructorId },
+      select: this.safeUserSelect,
+    });
+    if (!instructor || !instructor.isActive) {
+      throw new BadRequestException("L'utilisateur sélectionné est introuvable ou désactivé.");
+    }
+
+    const targetCanReceiveRequest =
+      instructor.roles.includes(UserRole.AGENT) ||
+      (actor.roles.includes(UserRole.SUPER_ADMIN) && instructor.roles.includes(UserRole.ADMIN));
+
+    if (!targetCanReceiveRequest || instructor.roles.includes(UserRole.POINT_FOCAL)) {
+      throw new BadRequestException('Le dossier doit être assigné à un Agent ou à un Administrateur autorisé.');
+    }
+
+    if (!actor.roles.includes(UserRole.SUPER_ADMIN) && !instructor.roles.includes(UserRole.AGENT)) {
+      throw new ForbiddenException('Un Administrateur ne peut assigner un dossier qu’à un Agent.');
+    }
+
+    await this.prisma.resourceRequest.update({
+      where: { id },
+      data: { instructorId },
+    });
+
+    await this.audit.record({
+      action: AuditAction.ADMIN_NOTE_ADDED,
+      actorId: actor.userId,
+      requestId: id,
+      message: `Dossier attribué à ${this.displayUserName(instructor)}.`,
+      metadata: { instructorId, previousInstructorId: request.instructorId },
+    });
+
+    return this.findAdminDetail(id);
   }
 
   async track(dto: TrackRequestDto) {
@@ -495,8 +572,9 @@ export class RequestsService {
     return this.track(dto);
   }
 
-  async updateStatus(id: string, dto: UpdateRequestStatusDto, actorId?: string) {
-    const previous = await this.findAdminDetail(id);
+  async updateStatus(id: string, dto: UpdateRequestStatusDto, actor?: AuthUser) {
+    const previous = await this.findAdminDetail(id, actor);
+    const actorId = actor?.userId;
     this.assertValidStatusUpdate(dto);
 
     const updated = await this.prisma.resourceRequest.update({
@@ -510,7 +588,6 @@ export class RequestsService {
         accessTransmissionMode: dto.accessTransmissionMode,
         resourcesCreatedAt:
           dto.status === RequestStatus.RESOURCES_ASSIGNED ? new Date() : previous.resourcesCreatedAt,
-        instructorId: actorId ?? previous.instructorId,
       },
     });
 
@@ -623,6 +700,10 @@ export class RequestsService {
         PHYSICAL_HANDOVER: 'Remise physique',
       } satisfies Record<AccessTransmissionMode, string>
     )[value];
+  }
+
+  private displayUserName(user: { firstName?: string | null; lastName?: string | null; email: string }) {
+    return [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
   }
 
   private instructionAuditMessage(

@@ -11,6 +11,7 @@ export type AdminUser = {
   email: string;
   firstName?: string;
   lastName?: string;
+  middleName?: string | null;
   roles: UserRole[];
 };
 
@@ -168,6 +169,8 @@ export type ListRequestsFilters = {
   search?: string;
   status?: string;
   ministryId?: string;
+  instructorId?: string;
+  assignedToMe?: boolean;
   page?: number;
   limit?: number;
 };
@@ -301,6 +304,8 @@ export function buildAdminQuery(filters: ListRequestsFilters) {
   if (filters.search) params.set('search', filters.search);
   if (filters.status) params.set('status', filters.status);
   if (filters.ministryId) params.set('ministryId', filters.ministryId);
+  if (filters.instructorId) params.set('instructorId', filters.instructorId);
+  if (filters.assignedToMe) params.set('assignedToMe', 'true');
   if (filters.page) params.set('page', String(filters.page));
   if (filters.limit) params.set('limit', String(filters.limit));
   const query = params.toString();
