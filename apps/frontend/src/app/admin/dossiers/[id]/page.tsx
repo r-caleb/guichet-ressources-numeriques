@@ -9,6 +9,7 @@ import { ChatPanel } from '@/components/chat-panel';
 import { TemporaryPasswordField } from '@/components/temporary-password-field';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
+  AdminAccount,
   AdminRequestDetail,
   ChatConversation,
   accessTransmissionOptions,
@@ -46,6 +47,31 @@ function formatAuditMessage(message: string) {
     (text, [value, label]) => text.replaceAll(value, label),
     message,
   );
+}
+
+function actorName(actor?: AdminAccount | null) {
+  if (!actor) return 'Non renseigné';
+  return [actor.firstName, actor.lastName].filter(Boolean).join(' ') || actor.email;
+}
+
+function actorRole(actor?: AdminAccount | null) {
+  if (!actor) return 'Action système';
+  const roleLabels: Record<string, string> = {
+    SUPER_ADMIN: 'Super administrateur',
+    ADMIN: 'Administrateur',
+    AGENT: 'Agent',
+    POINT_FOCAL: 'Point Focal',
+  };
+
+  return actor.roles.map((role) => roleLabels[role] ?? role).join(', ');
+}
+
+function latestInstruction(request: AdminRequestDetail) {
+  return [...request.auditEvents]
+    .reverse()
+    .find((event) =>
+      ['STATUS_CHANGED', 'ADMIN_NOTE_ADDED', 'RESOURCE_ASSIGNED', 'REQUEST_CLOSED'].includes(event.action),
+    );
 }
 
 export default function AdminRequestDetailPage() {
@@ -204,6 +230,45 @@ export default function AdminRequestDetailPage() {
 
       {request ? (
         <>
+          {(() => {
+            const latest = latestInstruction(request);
+
+            return (
+              <section className="admin-section last-instruction-card">
+                <div className="admin-section-title">
+                  <h2>Dernière instruction</h2>
+                  <span className="admin-count">{latest ? formatDateTime(latest.createdAt) : 'Aucune action'}</span>
+                </div>
+                <dl className="admin-definition-list">
+                  <div>
+                    <dt>Action</dt>
+                    <dd>{latest ? formatAuditMessage(latest.message) : 'Aucune instruction administrative enregistrée.'}</dd>
+                  </div>
+                  <div>
+                    <dt>Auteur</dt>
+                    <dd>{latest ? actorName(latest.actor) : 'Non renseigné'}</dd>
+                  </div>
+                  <div>
+                    <dt>Rôle</dt>
+                    <dd>{latest ? actorRole(latest.actor) : 'Non renseigné'}</dd>
+                  </div>
+                  <div>
+                    <dt>Statut actuel</dt>
+                    <dd>{statusLabel(request.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>Domaine attribué</dt>
+                    <dd>{request.assignedDomain ?? 'Non attribué'}</dd>
+                  </div>
+                  <div>
+                    <dt>Accès transmis</dt>
+                    <dd>{optionLabel(accessTransmissionOptions, request.accessTransmissionMode)}</dd>
+                  </div>
+                </dl>
+              </section>
+            );
+          })()}
+
           <section className="dossier-header">
             <div>
               <span>Statut actuel</span>
@@ -442,8 +507,12 @@ export default function AdminRequestDetailPage() {
             <ol className="audit-list">
               {request.auditEvents.map((event) => (
                 <li key={event.id}>
-                  <span>{formatDateTime(event.createdAt)}</span>
+                  <div className="audit-list-header">
+                    <span>{formatDateTime(event.createdAt)}</span>
+                    <em>{actorRole(event.actor)}</em>
+                  </div>
                   <strong>{formatAuditMessage(event.message)}</strong>
+                  <small>{actorName(event.actor)}</small>
                 </li>
               ))}
             </ol>

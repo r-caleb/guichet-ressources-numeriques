@@ -1439,6 +1439,15 @@ input[type='file'].control {
   line-height: 1.35;
 }
 
+.last-instruction-card .admin-definition-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.last-instruction-card .admin-definition-list div {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
 .dossier-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
@@ -1556,11 +1565,31 @@ input[type='file'].control {
 .admin-list li,
 .audit-list li {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding: 12px;
   background: #f8fbfe;
   border: 1px solid var(--gov-line);
   border-radius: 6px;
+}
+
+.audit-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.audit-list-header em {
+  color: var(--gov-blue);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.audit-list small {
+  color: var(--gov-muted);
+  font-weight: 800;
 }
 
 .admin-list strong,
@@ -2374,6 +2403,7 @@ th {
   .admin-inline-form,
   .users-inline-form,
   .request-summary-section .admin-definition-list,
+  .last-instruction-card .admin-definition-list,
   .dossier-header,
   .dossier-layout,
   .dossier-workspace,

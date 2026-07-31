@@ -74,6 +74,7 @@ export type AuditEvent = {
   action: string;
   message: string;
   createdAt: string;
+  actor?: AdminAccount | null;
 };
 
 export type ChatAttachment = {

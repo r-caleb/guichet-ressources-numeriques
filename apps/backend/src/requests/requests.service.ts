@@ -206,7 +206,12 @@ export class RequestsService {
         ministry: true,
         domainChoices: true,
         documents: true,
-        auditEvents: true,
+        auditEvents: {
+          include: {
+            actor: { select: this.safeUserSelect },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
         instructor: { select: this.safeUserSelect },
         pointFocalUser: { select: this.safeUserSelect },
       },
@@ -513,7 +518,7 @@ export class RequestsService {
       action: AuditAction.STATUS_CHANGED,
       actorId,
       requestId: id,
-      message: `Statut modifié : ${this.statusLabel(previous.status)} -> ${this.statusLabel(updated.status)}.`,
+      message: this.instructionAuditMessage(previous, updated),
     });
 
     return updated;
@@ -606,5 +611,34 @@ export class RequestsService {
         CLOSED: 'Clôturée',
       } satisfies Record<RequestStatus, string>
     )[status];
+  }
+
+  private accessTransmissionLabel(value?: AccessTransmissionMode | null) {
+    if (!value) return 'Non renseigné';
+    return (
+      {
+        PLATFORM: 'Plateforme',
+        OFFICIAL_EMAIL: 'Email',
+        OFFICIAL_LETTER: 'Lettre officielle',
+        PHYSICAL_HANDOVER: 'Remise physique',
+      } satisfies Record<AccessTransmissionMode, string>
+    )[value];
+  }
+
+  private instructionAuditMessage(
+    previous: { status: RequestStatus; assignedDomain?: string | null; accessTransmissionMode?: AccessTransmissionMode | null },
+    updated: { status: RequestStatus; assignedDomain?: string | null; accessTransmissionMode?: AccessTransmissionMode | null },
+  ) {
+    const changes = [`Statut : ${this.statusLabel(previous.status)} -> ${this.statusLabel(updated.status)}`];
+
+    if (previous.assignedDomain !== updated.assignedDomain) {
+      changes.push(`Domaine attribué : ${updated.assignedDomain || 'Non attribué'}`);
+    }
+
+    if (previous.accessTransmissionMode !== updated.accessTransmissionMode) {
+      changes.push(`Transmission des accès : ${this.accessTransmissionLabel(updated.accessTransmissionMode)}`);
+    }
+
+    return `Instruction enregistrée. ${changes.join(' ; ')}.`;
   }
 }
