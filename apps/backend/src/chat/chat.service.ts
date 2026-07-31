@@ -73,6 +73,45 @@ export class ChatService {
     return this.findAdminConversation(conversation.id);
   }
 
+  async getPointFocalUnreadSummary(userId: string) {
+    const conversations = await this.prisma.conversation.findMany({
+      where: {
+        pointFocalUserId: userId,
+        lastMessageAt: { not: null },
+      },
+      select: {
+        id: true,
+        reads: {
+          where: { userId },
+          select: { lastReadAt: true },
+          take: 1,
+        },
+        messages: {
+          where: { senderId: { not: userId } },
+          select: { createdAt: true },
+        },
+      },
+    });
+
+    let total = 0;
+    let conversationsWithUnread = 0;
+
+    for (const conversation of conversations) {
+      const lastReadAt = conversation.reads[0]?.lastReadAt;
+      const unreadInConversation = conversation.messages.filter((message) => {
+        return !lastReadAt || message.createdAt > lastReadAt;
+      }).length;
+
+      total += unreadInConversation;
+      if (unreadInConversation > 0) conversationsWithUnread += 1;
+    }
+
+    return {
+      unreadMessages: total,
+      conversationsWithUnread,
+    };
+  }
+
   async findPointFocalRequestConversation(requestId: string, userId: string) {
     const conversation = await this.ensureRequestConversation(requestId, userId);
     return this.findPointFocalConversation(conversation.id, userId);
@@ -151,6 +190,7 @@ export class ChatService {
       include: this.conversationDetailInclude(),
     });
     if (!conversation) throw new NotFoundException('Conversation introuvable.');
+    await this.markConversationRead(id, userId);
     return conversation;
   }
 
@@ -288,6 +328,25 @@ export class ChatService {
       data: {
         status: ConversationStatus.OPEN,
         lastMessageAt: sentAt,
+      },
+    });
+
+    await this.markConversationRead(conversationId, senderId, sentAt);
+  }
+
+  private async markConversationRead(conversationId: string, userId: string, lastReadAt = new Date()) {
+    await this.prisma.conversationRead.upsert({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+      update: { lastReadAt },
+      create: {
+        conversationId,
+        userId,
+        lastReadAt,
       },
     });
   }

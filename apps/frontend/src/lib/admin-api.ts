@@ -105,6 +105,11 @@ export type ChatConversation = {
   messages: ChatMessage[];
 };
 
+export type ChatUnreadSummary = {
+  unreadMessages: number;
+  conversationsWithUnread: number;
+};
+
 export type AdminRequestListItem = {
   id: string;
   number: string;

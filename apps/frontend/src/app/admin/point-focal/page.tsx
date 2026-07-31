@@ -7,6 +7,7 @@ import { FileText, MessageSquare, PlusCircle, Search } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import {
   AdminRequestListItem,
+  ChatUnreadSummary,
   adminFetch,
   displayMinistryName,
   formatDate,
@@ -18,7 +19,12 @@ import {
 export default function PointFocalDashboardPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<AdminRequestListItem[]>([]);
+  const [unreadSummary, setUnreadSummary] = useState<ChatUnreadSummary>({
+    unreadMessages: 0,
+    conversationsWithUnread: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isUnreadLoading, setIsUnreadLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -33,6 +39,13 @@ export default function PointFocalDashboardPage() {
         setError(exception instanceof Error ? exception.message : 'Chargement impossible.');
       })
       .finally(() => setIsLoading(false));
+
+    adminFetch<ChatUnreadSummary>('/chat/me/unread-count')
+      .then(setUnreadSummary)
+      .catch(() => {
+        setUnreadSummary({ unreadMessages: 0, conversationsWithUnread: 0 });
+      })
+      .finally(() => setIsUnreadLoading(false));
   }, [router]);
 
   const activeCount = useMemo(
@@ -69,6 +82,10 @@ export default function PointFocalDashboardPage() {
         <div>
           <span>Dossiers en cours</span>
           <strong>{isLoading ? '...' : activeCount}</strong>
+        </div>
+        <div>
+          <span>Messages non lus</span>
+          <strong>{isUnreadLoading ? '...' : unreadSummary.unreadMessages}</strong>
         </div>
       </section>
 

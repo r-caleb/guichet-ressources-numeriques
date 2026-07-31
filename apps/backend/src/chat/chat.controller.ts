@@ -47,6 +47,17 @@ const messageBodySchema = {
 export class ChatController {
   constructor(private readonly chat: ChatService) {}
 
+  @Get('me/unread-count')
+  @ApiOperation({
+    summary: 'Compter les messages non lus du Point Focal',
+    description:
+      'Retourne le nombre de messages non lus dans les conversations du Point Focal connecté.',
+  })
+  @Roles(UserRole.POINT_FOCAL)
+  getPointFocalUnreadCount(@Req() req: AuthedRequest) {
+    return this.chat.getPointFocalUnreadSummary(req.user.userId);
+  }
+
   @Get('general')
   @ApiOperation({
     summary: 'Lire la conversation générale',

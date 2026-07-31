@@ -115,6 +115,7 @@ model User {
   focalRequests      ResourceRequest[] @relation("PointFocalRequests")
   focalConversations Conversation[] @relation("PointFocalConversations")
   sentMessages       Message[] @relation("MessageSender")
+  conversationReads  ConversationRead[]
   auditEvents        AuditEvent[]
 
   createdAt DateTime @default(now())
@@ -241,6 +242,7 @@ model Conversation {
   lastMessageAt DateTime?
 
   messages Message[]
+  reads    ConversationRead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -269,6 +271,24 @@ model Message {
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
+}
+
+model ConversationRead {
+  id             String @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lastReadAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([lastReadAt])
 }
 
 model MessageAttachment {
