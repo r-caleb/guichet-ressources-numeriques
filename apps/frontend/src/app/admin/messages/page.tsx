@@ -162,7 +162,7 @@ export default function AdminMessagesPage() {
                   {selectedConversation.request ? (
                     <Link
                       className="button secondary compact-button"
-                      href={`/admin/dossiers/${selectedConversation.request.id}`}
+                      href={`/admin/dossiers/${selectedConversation.request.id}#conversation-dossier`}
                     >
                       <FileText size={17} aria-hidden="true" />
                       Dossier
