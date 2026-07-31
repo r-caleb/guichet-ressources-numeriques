@@ -20,6 +20,7 @@ import { AuthUser } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { DocumentsService } from '../documents/documents.service';
 import { AdditionalDocumentsDto } from './dto/additional-documents.dto';
 import { CheckDomainQueryDto } from './dto/check-domain.query.dto';
 import { CreatePointFocalAccountDto } from './dto/create-point-focal-account.dto';
@@ -39,6 +40,7 @@ export class RequestsController {
   constructor(
     private readonly requests: RequestsService,
     private readonly receipts: ReceiptsService,
+    private readonly documents: DocumentsService,
   ) {}
 
   @Post()
@@ -208,6 +210,39 @@ export class RequestsController {
   @Roles(UserRole.POINT_FOCAL)
   listMyRequests(@Req() req: AuthedRequest) {
     return this.requests.listForPointFocal(req.user?.userId ?? '');
+  }
+
+  @Get('me/documents/:documentId/download')
+  @ApiOperation({
+    summary: 'Télécharger un document du Point Focal connecté',
+    description:
+      "Permet au Point Focal de télécharger uniquement les documents liés à ses propres dossiers.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.POINT_FOCAL)
+  async downloadMyDocument(
+    @Req() req: AuthedRequest,
+    @Param('documentId') documentId: string,
+    @Res() response: Response,
+  ) {
+    const { document, stream } = await this.documents.getPointFocalDownload(documentId, req.user?.userId ?? '');
+    response.setHeader('Content-Type', document.mimeType);
+    response.setHeader('Content-Disposition', `attachment; filename="${document.originalName}"`);
+    stream.pipe(response);
+  }
+
+  @Get('me/:id')
+  @ApiOperation({
+    summary: 'Consulter un dossier du Point Focal connecté',
+    description:
+      "Retourne le détail d'un dossier uniquement s'il est rattaché au compte Point Focal authentifié.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.POINT_FOCAL)
+  findMyRequest(@Req() req: AuthedRequest, @Param('id') id: string) {
+    return this.requests.findPointFocalDetail(id, req.user?.userId ?? '');
   }
 
   @Get('admin')

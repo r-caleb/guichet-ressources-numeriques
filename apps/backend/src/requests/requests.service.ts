@@ -335,6 +335,69 @@ export class RequestsService {
     });
   }
 
+  async findPointFocalDetail(id: string, userId: string) {
+    const request = await this.prisma.resourceRequest.findFirst({
+      where: { id, pointFocalUserId: userId },
+      select: {
+        id: true,
+        number: true,
+        focalLastName: true,
+        focalMiddleName: true,
+        focalFirstName: true,
+        focalFunction: true,
+        focalDepartment: true,
+        focalPhone: true,
+        focalEmail: true,
+        ministry: true,
+        otherInstitutionName: true,
+        requestTypes: true,
+        requestDetails: true,
+        platformName: true,
+        platformType: true,
+        audience: true,
+        criticality: true,
+        existingUrl: true,
+        targetDate: true,
+        officialPurpose: true,
+        technicalContact: true,
+        status: true,
+        assignedDomain: true,
+        hostingAssigned: true,
+        resourcesCreatedAt: true,
+        accessDeliveredAt: true,
+        accessTransmissionMode: true,
+        publicObservation: true,
+        rejectionReason: true,
+        domainChoices: true,
+        documents: {
+          select: {
+            id: true,
+            type: true,
+            originalName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        auditEvents: {
+          select: {
+            id: true,
+            action: true,
+            message: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+    return request;
+  }
+
   async addAdditionalDocuments(dto: AdditionalDocumentsDto, files: Express.Multer.File[]) {
     if (!files.length) {
       throw new BadRequestException('Au moins un document complémentaire doit être transmis.');

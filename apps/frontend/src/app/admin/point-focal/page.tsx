@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, MessageSquare, PlusCircle } from 'lucide-react';
+import { FileText, MessageSquare, PlusCircle, Search } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import {
   AdminRequestListItem,
@@ -96,10 +96,16 @@ export default function PointFocalDashboardPage() {
                 <span>Date de dépôt</span>
                 <strong>{formatDate(request.createdAt)}</strong>
               </div>
-              <button className="button secondary compact-button" type="button" disabled>
-                <MessageSquare size={17} aria-hidden="true" />
-                Chat bientôt
-              </button>
+              <div className="point-focal-request-actions">
+                <Link className="button secondary compact-button" href={`/admin/point-focal/dossiers/${request.id}`}>
+                  <Search size={17} aria-hidden="true" />
+                  Ouvrir
+                </Link>
+                <button className="button secondary compact-button" type="button" disabled>
+                  <MessageSquare size={17} aria-hidden="true" />
+                  Chat bientôt
+                </button>
+              </div>
             </article>
           ))}
 

@@ -1359,6 +1359,13 @@ input[type='file'].control {
   white-space: nowrap;
 }
 
+.point-focal-request-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .dossier-header {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr 1fr;
@@ -1552,6 +1559,54 @@ input[type='file'].control {
 .document-card small {
   color: var(--gov-muted);
   font-weight: 800;
+}
+
+.point-focal-document-grid {
+  grid-template-columns: 1fr;
+}
+
+.point-focal-alert,
+.point-focal-chat-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fff8db;
+  border: 1px solid #ead17a;
+  border-radius: var(--gov-radius);
+}
+
+.point-focal-alert svg,
+.point-focal-chat-preview svg {
+  flex: 0 0 auto;
+  color: var(--gov-gold-text);
+}
+
+.point-focal-alert div,
+.point-focal-chat-preview div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.point-focal-alert span,
+.point-focal-chat-preview span {
+  color: var(--gov-gold-text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.point-focal-alert strong,
+.point-focal-chat-preview strong {
+  color: var(--gov-navy);
+  line-height: 1.45;
+}
+
+.point-focal-chat-preview {
+  justify-content: space-between;
+  background: #f8fbfe;
+  border-color: var(--gov-line);
 }
 
 .admin-empty {
@@ -1882,6 +1937,12 @@ th {
   .tracking-result-dates {
     min-width: 0;
     text-align: left;
+  }
+
+  .point-focal-request-actions,
+  .point-focal-chat-preview {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

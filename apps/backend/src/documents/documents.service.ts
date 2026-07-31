@@ -110,6 +110,22 @@ export class DocumentsService {
     return this.getS3Download(document);
   }
 
+  async getPointFocalDownload(id: string, userId: string) {
+    const document = await this.prisma.requestDocument.findFirst({
+      where: {
+        id,
+        request: { pointFocalUserId: userId },
+      },
+    });
+    if (!document) throw new NotFoundException('Document introuvable.');
+
+    if (!document.localPath.startsWith('s3://')) {
+      throw new NotFoundException('Ce document n’est pas disponible dans le stockage S3.');
+    }
+
+    return this.getS3Download(document);
+  }
+
   private async getS3Download(document: RequestDocument) {
     const { bucket, key } = this.parseS3Uri(document.localPath);
     const object = await this.s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));

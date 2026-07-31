@@ -108,11 +108,16 @@ export type AdminRequestDetail = AdminRequestListItem & {
   focalPhone: string;
   requestTypes: string[];
   requestDetails?: string | null;
+  existingUrl?: string | null;
+  targetDate?: string | null;
   platformType: string;
   audience: string;
   criticality: string;
   officialPurpose: string;
   technicalContact?: string | null;
+  hostingAssigned?: boolean;
+  resourcesCreatedAt?: string | null;
+  accessDeliveredAt?: string | null;
   accessTransmissionMode?: 'OFFICIAL_LETTER' | 'OFFICIAL_EMAIL' | 'PHYSICAL_HANDOVER' | null;
   administrativeNotes?: string | null;
   publicObservation?: string | null;
@@ -253,6 +258,10 @@ export function buildAdminQuery(filters: ListRequestsFilters) {
 
 export function documentDownloadUrl(documentId: string) {
   return `${API_BASE_URL}/admin/documents/${documentId}/download`;
+}
+
+export function pointFocalDocumentDownloadUrl(documentId: string) {
+  return `${API_BASE_URL}/requests/me/documents/${documentId}/download`;
 }
 
 export { displayMinistryName };
