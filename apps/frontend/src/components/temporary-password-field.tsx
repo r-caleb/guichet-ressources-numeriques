@@ -93,7 +93,7 @@ export function TemporaryPasswordField({ label, name = 'password' }: TemporaryPa
           className="control"
           name={name}
           type={isVisible ? 'text' : 'password'}
-          minLength={8}
+          minLength={10}
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

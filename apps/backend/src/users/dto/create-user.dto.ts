@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsEmail, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
@@ -9,8 +9,11 @@ export class CreateUserDto {
 
   @ApiProperty({ example: 'Agent12345!' })
   @IsString()
-  @MinLength(8)
+  @MinLength(10)
   @MaxLength(120)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/, {
+    message: 'Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un symbole.',
+  })
   password!: string;
 
   @ApiProperty({ example: 'Jean' })
