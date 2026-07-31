@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Save, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
+import { TemporaryPasswordField } from '@/components/temporary-password-field';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
   AdminRequestDetail,
@@ -287,10 +288,7 @@ export default function AdminRequestDetailPage() {
                   </div>
                 ) : (
                   <form className="point-focal-account-form" onSubmit={handleCreatePointFocalAccount}>
-                    <label className="field">
-                      Mot de passe temporaire
-                      <input className="control" name="password" type="password" minLength={8} required />
-                    </label>
+                    <TemporaryPasswordField label="Mot de passe temporaire" />
                     <button className="button secondary" type="submit" disabled={isCreatingPointFocal}>
                       <UserPlus size={18} aria-hidden="true" />
                       {isCreatingPointFocal ? 'Création...' : 'Créer le compte Point Focal'}

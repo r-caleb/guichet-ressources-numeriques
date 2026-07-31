@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Pencil, Plus, RotateCcw, Save, Trash2, UserRound, X } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
+import { TemporaryPasswordField } from '@/components/temporary-password-field';
 import { AdminAccount, UserRole, adminFetch, formatDate, getAdminToken } from '@/lib/admin-api';
 
 const roleLabels: Record<UserRole, string> = {
@@ -251,10 +252,7 @@ export default function AdminUsersPage() {
                 <option value="SUPER_ADMIN">Super administrateur</option>
               </select>
             </label>
-            <label className="field">
-              Mot de passe temporaire
-              <input className="control" name="password" type="password" minLength={8} required />
-            </label>
+            <TemporaryPasswordField label="Mot de passe temporaire" />
             <button className="button primary" type="submit" disabled={isCreating}>
               <Plus size={17} aria-hidden="true" />
               {isCreating ? 'Création...' : 'Créer'}
@@ -282,10 +280,7 @@ export default function AdminUsersPage() {
                 readOnly
               />
             </label>
-            <label className="field">
-              Nouveau mot de passe
-              <input className="control" name="password" type="password" minLength={8} required />
-            </label>
+            <TemporaryPasswordField label="Nouveau mot de passe" />
             <button className="button primary" type="submit" disabled={isResetting}>
               <KeyRound size={17} aria-hidden="true" />
               {isResetting ? 'Réinitialisation...' : 'Réinitialiser'}
