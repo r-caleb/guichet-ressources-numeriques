@@ -1352,6 +1352,20 @@ input[type='file'].control {
   line-height: 1.35;
 }
 
+.closing-check-alert {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.closing-check-alert strong {
+  color: #5d4300;
+}
+
+.closing-check-alert span {
+  font-size: 0.86rem;
+}
+
 .admin-inline-form {
   display: grid;
   grid-template-columns: minmax(220px, 1.2fr) minmax(130px, 0.55fr) minmax(190px, 0.9fr) auto;

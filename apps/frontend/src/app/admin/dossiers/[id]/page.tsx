@@ -108,6 +108,14 @@ export default function AdminRequestDetailPage() {
   const currentUser = getStoredAdminUser();
   const canAssign = currentUser?.roles.some((role) => ['SUPER_ADMIN', 'ADMIN'].includes(role)) ?? false;
   const canAssignAdministrators = currentUser?.roles.includes('SUPER_ADMIN') ?? false;
+  const closingMissingItems =
+    form.status === 'CLOSED'
+      ? [
+          !form.assignedDomain.trim() ? 'domaine attribué' : '',
+          !form.accessTransmissionMode ? 'mode de transmission des accès' : '',
+          !form.publicObservation.trim() ? 'observation finale visible au Point Focal' : '',
+        ].filter(Boolean)
+      : [];
 
   useEffect(() => {
     if (!getAdminToken()) {
@@ -551,6 +559,14 @@ export default function AdminRequestDetailPage() {
                     <dd>{optionLabel(accessTransmissionOptions, request.accessTransmissionMode)}</dd>
                   </div>
                 </dl>
+                {closingMissingItems.length ? (
+                  <div className="form-alert subtle closing-check-alert">
+                    <strong>Contrôle avant clôture</strong>
+                    <span>
+                      Pour clôturer ce dossier, renseignez : {closingMissingItems.join(', ')}.
+                    </span>
+                  </div>
+                ) : null}
                 <form className="instruction-form" onSubmit={handleSave}>
                   <label className="field">
                     Décision
@@ -603,7 +619,9 @@ export default function AdminRequestDetailPage() {
                     />
                   </label>
                   <label className="field">
-                    Observation visible au Point Focal
+                    {form.status === 'CLOSED'
+                      ? 'Observation finale visible au Point Focal'
+                      : 'Observation visible au Point Focal'}
                     <textarea
                       className="control"
                       value={form.publicObservation}

@@ -603,7 +603,7 @@ export class RequestsService {
   }
 
   private assertValidStatusUpdate(dto: UpdateRequestStatusDto) {
-    if (dto.status === RequestStatus.RESOURCES_ASSIGNED && !dto.assignedDomain) {
+    if (dto.status === RequestStatus.RESOURCES_ASSIGNED && !dto.assignedDomain?.trim()) {
       throw new BadRequestException("Le domaine attribué est obligatoire lorsque les ressources sont attribuées.");
     }
 
@@ -618,15 +618,29 @@ export class RequestsService {
 
     if (
       dto.status === RequestStatus.ADDITIONAL_DOCUMENTS_REQUESTED &&
-      !dto.publicObservation
+      !dto.publicObservation?.trim()
     ) {
       throw new BadRequestException(
         "Une observation publique est obligatoire lorsque des compléments sont demandés.",
       );
     }
 
-    if (dto.status === RequestStatus.REJECTED && !dto.publicObservation && !dto.rejectionReason) {
+    if (dto.status === RequestStatus.REJECTED && !dto.publicObservation?.trim() && !dto.rejectionReason?.trim()) {
       throw new BadRequestException("Un motif ou une observation est obligatoire lorsqu'une demande est rejetée.");
+    }
+
+    if (dto.status === RequestStatus.CLOSED) {
+      if (!dto.assignedDomain?.trim()) {
+        throw new BadRequestException("Le domaine attribué est obligatoire avant de clôturer le dossier.");
+      }
+
+      if (!dto.accessTransmissionMode) {
+        throw new BadRequestException("Le mode de transmission des accès est obligatoire avant de clôturer le dossier.");
+      }
+
+      if (!dto.publicObservation?.trim()) {
+        throw new BadRequestException("Une observation finale visible au Point Focal est obligatoire avant de clôturer le dossier.");
+      }
     }
   }
 
