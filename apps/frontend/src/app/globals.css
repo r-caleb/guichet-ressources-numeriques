@@ -1318,6 +1318,40 @@ input[type='file'].control {
   border-radius: 6px;
 }
 
+.decision-section {
+  align-content: start;
+}
+
+.decision-recap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.decision-recap div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.decision-recap dt {
+  color: var(--gov-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.decision-recap dd {
+  margin: 0;
+  color: var(--gov-navy);
+  font-weight: 900;
+  line-height: 1.35;
+}
+
 .admin-inline-form {
   display: grid;
   grid-template-columns: minmax(220px, 1.2fr) minmax(130px, 0.55fr) minmax(190px, 0.9fr) auto;
@@ -2438,6 +2472,7 @@ th {
   .users-inline-form,
   .request-summary-section .admin-definition-list,
   .last-instruction-card .admin-definition-list,
+  .decision-recap,
   .dossier-header,
   .dossier-layout,
   .dossier-workspace,

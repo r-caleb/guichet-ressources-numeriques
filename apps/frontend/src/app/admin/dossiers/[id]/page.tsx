@@ -197,9 +197,9 @@ export default function AdminRequestDetailPage() {
       });
 
       setRequest((current) => (current ? { ...current, ...updated } : current));
-      setSuccess('Instruction enregistrée.');
+      setSuccess('Décision enregistrée.');
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : "L'instruction n'a pas été enregistrée.");
+      setError(exception instanceof Error ? exception.message : "La décision n'a pas été enregistrée.");
     } finally {
       setIsSaving(false);
     }
@@ -268,7 +268,7 @@ export default function AdminRequestDetailPage() {
     <AdminShell>
       <div className="admin-heading">
         <div>
-          <p className="eyebrow">Instruction du dossier</p>
+          <p className="eyebrow">Décision du dossier</p>
           <h1>{request?.number ?? 'Dossier'}</h1>
         </div>
         <Link className="button secondary" href="/admin/dossiers">
@@ -289,13 +289,13 @@ export default function AdminRequestDetailPage() {
             return (
               <section className="admin-section last-instruction-card">
                 <div className="admin-section-title">
-                  <h2>Dernière instruction</h2>
+                  <h2>Dernière décision</h2>
                   <span className="admin-count">{latest ? formatDateTime(latest.createdAt) : 'Aucune action'}</span>
                 </div>
                 <dl className="admin-definition-list">
                   <div>
                     <dt>Action</dt>
-                    <dd>{latest ? formatAuditMessage(latest.message) : 'Aucune instruction administrative enregistrée.'}</dd>
+                    <dd>{latest ? formatAuditMessage(latest.message) : 'Aucune décision administrative enregistrée.'}</dd>
                   </div>
                   <div>
                     <dt>Auteur</dt>
@@ -306,7 +306,7 @@ export default function AdminRequestDetailPage() {
                     <dd>{latest ? actorRole(latest.actor) : 'Non renseigné'}</dd>
                   </div>
                   <div>
-                    <dt>Statut actuel</dt>
+                    <dt>Décision actuelle</dt>
                     <dd>{statusLabel(request.status)}</dd>
                   </div>
                   <div>
@@ -324,7 +324,7 @@ export default function AdminRequestDetailPage() {
 
           <section className="dossier-header">
             <div>
-              <span>Statut actuel</span>
+              <span>Décision actuelle</span>
               <strong className={statusClassName(request.status)}>{statusLabel(request.status)}</strong>
             </div>
             <div>
@@ -481,13 +481,27 @@ export default function AdminRequestDetailPage() {
                 ) : null}
               </section>
 
-              <section className="admin-section">
+              <section className="admin-section decision-section">
                 <div className="admin-section-title">
-                  <h2>Instruction</h2>
+                  <h2>Décision administrative</h2>
                 </div>
+                <dl className="decision-recap">
+                  <div>
+                    <dt>Décision actuelle</dt>
+                    <dd>{statusLabel(request.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>Domaine retenu</dt>
+                    <dd>{request.assignedDomain ?? 'Non attribué'}</dd>
+                  </div>
+                  <div>
+                    <dt>Accès</dt>
+                    <dd>{optionLabel(accessTransmissionOptions, request.accessTransmissionMode)}</dd>
+                  </div>
+                </dl>
                 <form className="instruction-form" onSubmit={handleSave}>
                   <label className="field">
-                    Statut
+                    Décision
                     <select
                       className="control"
                       value={form.status}
@@ -527,7 +541,7 @@ export default function AdminRequestDetailPage() {
                     </select>
                   </label>
                   <label className="field">
-                    Notes administratives
+                    Notes internes
                     <textarea
                       className="control"
                       value={form.administrativeNotes}
@@ -555,12 +569,12 @@ export default function AdminRequestDetailPage() {
                       onChange={(event) =>
                         setForm((current) => ({ ...current, rejectionReason: event.target.value }))
                       }
-                      placeholder="À renseigner si le statut est Rejetée."
+                      placeholder="À renseigner si la décision est Rejetée."
                     />
                   </label>
                   <button className="button primary" type="submit" disabled={isSaving}>
                     <Save size={18} aria-hidden="true" />
-                    {isSaving ? 'Enregistrement...' : "Enregistrer l'instruction"}
+                    {isSaving ? 'Enregistrement...' : 'Enregistrer la décision'}
                   </button>
                 </form>
               </section>
