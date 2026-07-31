@@ -133,22 +133,6 @@ button {
   border: 1px solid #d7dfec;
 }
 
-.header-search {
-  display: grid;
-  width: 41px;
-  height: 41px;
-  flex: 0 0 auto;
-  place-items: center;
-  color: #274285;
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-}
-
-.header-search:hover {
-  background: #eef4fb;
-}
-
 .mobile-menu-button {
   display: none;
 }
@@ -2520,10 +2504,6 @@ th {
 
   .mobile-menu-button:hover {
     background: #eef4fb;
-  }
-
-  .header-search {
-    display: none;
   }
 
   .footer-state-line,

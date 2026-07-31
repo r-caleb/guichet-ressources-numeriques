@@ -409,11 +409,19 @@ export class RequestsService {
   async listForPointFocal(userId: string) {
     return this.prisma.resourceRequest.findMany({
       where: { pointFocalUserId: userId },
-      include: {
+      select: {
+        id: true,
+        number: true,
+        focalLastName: true,
+        focalFirstName: true,
+        focalEmail: true,
+        platformName: true,
+        status: true,
+        assignedDomain: true,
+        createdAt: true,
+        updatedAt: true,
         ministry: true,
         domainChoices: true,
-        instructor: { select: this.safeUserSelect },
-        pointFocalUser: { select: this.safeUserSelect },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -469,7 +477,6 @@ export class RequestsService {
             id: true,
             action: true,
             message: true,
-            actor: { select: this.safeUserSelect },
             createdAt: true,
           },
           orderBy: { createdAt: 'asc' },

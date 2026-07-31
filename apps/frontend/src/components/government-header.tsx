@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LockKeyhole, Menu, Search, X } from 'lucide-react';
+import { LockKeyhole, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function GovernmentHeader() {
@@ -11,7 +11,6 @@ export function GovernmentHeader() {
 
   const navItems = [
     { href: '/', label: 'Demande' },
-    { href: '/suivi', label: 'Suivi' },
   ];
 
   useEffect(() => {
@@ -58,9 +57,6 @@ export function GovernmentHeader() {
             <LockKeyhole size={14} aria-hidden="true" />
             Administration
           </Link>
-          <button className="header-search" type="button" aria-label="Rechercher">
-            <Search size={18} aria-hidden="true" />
-          </button>
         </nav>
       </div>
     </header>
