@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, KeyRound, MessageSquare, Save, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Save, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import { ChatPanel } from '@/components/chat-panel';
 import { TemporaryPasswordField } from '@/components/temporary-password-field';
@@ -18,7 +18,6 @@ import {
   documentTypeLabel,
   formatDateTime,
   getAdminToken,
-  getStoredAdminUser,
   statusClassName,
   statusLabel,
   statusOptions,
@@ -65,13 +64,8 @@ export default function AdminRequestDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreatingPointFocal, setIsCreatingPointFocal] = useState(false);
-  const [isResettingPointFocal, setIsResettingPointFocal] = useState(false);
-  const [isResetFormVisible, setIsResetFormVisible] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const currentUser = getStoredAdminUser();
-  const canResetPointFocalPassword =
-    currentUser?.roles.some((role) => ['ADMIN', 'SUPER_ADMIN'].includes(role)) ?? false;
 
   useEffect(() => {
     if (!getAdminToken()) {
@@ -191,32 +185,6 @@ export default function AdminRequestDetailPage() {
     }
   }
 
-  async function handleResetPointFocalPassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!request?.pointFocalUser) return;
-
-    setError('');
-    setSuccess('');
-    setIsResettingPointFocal(true);
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    try {
-      await adminFetch(`/admin/users/${request.pointFocalUser.id}/password`, {
-        method: 'PATCH',
-        body: JSON.stringify({ password: formData.get('password') }),
-      });
-      form.reset();
-      setIsResetFormVisible(false);
-      setSuccess('Mot de passe du Point Focal réinitialisé.');
-    } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Réinitialisation impossible.');
-    } finally {
-      setIsResettingPointFocal(false);
-    }
-  }
-
   return (
     <AdminShell>
       <div className="admin-heading">
@@ -328,33 +296,6 @@ export default function AdminRequestDetailPage() {
                     <small>
                       {request.pointFocalUser.email} - {request.pointFocalUser.isActive ? 'Actif' : 'Désactivé'}
                     </small>
-                    {canResetPointFocalPassword ? (
-                      <>
-                        <div className="linked-account-actions">
-                          <button
-                            className="button secondary compact-button"
-                            type="button"
-                            onClick={() => setIsResetFormVisible((current) => !current)}
-                          >
-                            {isResetFormVisible ? (
-                              <X size={17} aria-hidden="true" />
-                            ) : (
-                              <KeyRound size={17} aria-hidden="true" />
-                            )}
-                            {isResetFormVisible ? 'Annuler' : 'Réinitialiser le mot de passe'}
-                          </button>
-                        </div>
-                        {isResetFormVisible ? (
-                          <form className="point-focal-account-form compact-reset-form" onSubmit={handleResetPointFocalPassword}>
-                            <TemporaryPasswordField label="Nouveau mot de passe" />
-                            <button className="button secondary" type="submit" disabled={isResettingPointFocal}>
-                              <KeyRound size={18} aria-hidden="true" />
-                              {isResettingPointFocal ? 'Réinitialisation...' : 'Réinitialiser'}
-                            </button>
-                          </form>
-                        ) : null}
-                      </>
-                    ) : null}
                   </div>
                 ) : (
                   <form className="point-focal-account-form" onSubmit={handleCreatePointFocalAccount}>

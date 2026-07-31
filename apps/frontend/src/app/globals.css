@@ -1340,18 +1340,6 @@ input[type='file'].control {
   font-weight: 700;
 }
 
-.linked-account-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.compact-reset-form {
-  margin-top: 6px;
-  padding: 10px;
-}
-
 .point-focal-request-list {
   display: grid;
   gap: 10px;
