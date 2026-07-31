@@ -31,23 +31,6 @@ function requestTypeLabels(values: string[]) {
   return values.map((value) => optionLabel(requestTypes, value)).join(', ');
 }
 
-function actorName(actor?: AdminRequestDetail['auditEvents'][number]['actor']) {
-  if (!actor) return 'Service instructeur';
-  return [actor.firstName, actor.lastName].filter(Boolean).join(' ') || actor.email;
-}
-
-function actorRole(actor?: AdminRequestDetail['auditEvents'][number]['actor']) {
-  if (!actor) return 'Action système';
-  const roleLabels: Record<string, string> = {
-    SUPER_ADMIN: 'Super administrateur',
-    ADMIN: 'Administrateur',
-    AGENT: 'Agent',
-    POINT_FOCAL: 'Point Focal',
-  };
-
-  return actor.roles.map((role) => roleLabels[role] ?? role).join(', ');
-}
-
 function formatAuditMessage(message: string) {
   const translations: Record<string, string> = {
     RECEIVED: 'Reçue',
@@ -368,9 +351,7 @@ export default function PointFocalRequestDetailPage() {
                     <em>{auditActionLabel(event.action)}</em>
                   </div>
                   <strong>{formatAuditMessage(event.message)}</strong>
-                  <small>
-                    {actorName(event.actor)} - {actorRole(event.actor)}
-                  </small>
+                  <small>Administrateur Système</small>
                 </li>
               ))}
             </ol>
