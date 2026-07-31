@@ -476,11 +476,11 @@ export function RequestForm() {
         <div className="form-grid two">
           <label className="field">
             <RequiredLabel>Lettre officielle de demande</RequiredLabel>
-            <input className="control" name="officialLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
+            <input className="control" name="officialLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required />
           </label>
           <label className="field">
             <RequiredLabel>Lettre de désignation du Point Focal</RequiredLabel>
-            <input className="control" name="designationLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required />
+            <input className="control" name="designationLetter" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required />
           </label>
         </div>
       </section>

@@ -16,6 +16,7 @@ export class DocumentsService {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'image/jpeg',
     'image/png',
+    'image/webp',
   ]);
   private readonly s3Bucket: string;
   private readonly s3Prefix: string;
@@ -110,7 +111,7 @@ export class DocumentsService {
   private assertAllowedRequestFile(file: Express.Multer.File) {
     if (!this.allowedMimeTypes.has(file.mimetype)) {
       throw new BadRequestException(
-        'Format de fichier non autorisé. Formats acceptés : PDF, Word, JPG ou PNG.',
+        'Format de fichier non autorisé. Formats acceptés : PDF, Word, JPG, PNG ou WEBP.',
       );
     }
 

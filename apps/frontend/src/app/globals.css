@@ -1703,37 +1703,89 @@ input[type='file'].control {
 
 .chat-attachments {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
-.chat-attachment {
+.chat-attachment-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: center;
-  min-height: 36px;
-  padding: 8px 10px;
+  overflow: hidden;
   color: var(--gov-blue);
   background: #f8fbfe;
   border: 1px solid #b7c6d6;
   border-radius: 6px;
-  text-align: left;
 }
 
-.chat-message.mine .chat-attachment {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
+.chat-message.mine .chat-attachment-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.chat-attachment span {
+.chat-attachment-card img,
+.chat-attachment-card iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+.chat-attachment-card img {
+  max-height: 280px;
+  object-fit: cover;
+}
+
+.chat-attachment-card iframe {
+  height: 260px;
+  background: #ffffff;
+}
+
+.chat-attachment-placeholder {
+  display: grid;
+  min-height: 74px;
+  place-items: center;
+  color: var(--gov-blue);
+  background: #eef5fb;
+}
+
+.chat-attachment-info {
+  display: grid;
+  gap: 3px;
+  padding: 0 10px;
+}
+
+.chat-attachment-info strong {
   overflow: hidden;
+  color: var(--gov-navy);
+  font-size: 0.84rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.chat-attachment small {
+.chat-attachment-info small,
+.chat-pending-card small {
+  color: var(--gov-muted);
   font-weight: 800;
+}
+
+.chat-attachment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.chat-attachment-actions button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  color: var(--gov-blue);
+  background: #ffffff;
+  border: 1px solid #c9dced;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 900;
 }
 
 .chat-empty {
@@ -1751,10 +1803,19 @@ input[type='file'].control {
 }
 
 .chat-composer textarea.control {
+  grid-column: 1;
+  grid-row: 1;
   min-height: 72px;
 }
 
+.chat-composer .button.primary {
+  grid-column: 3;
+  grid-row: 1;
+}
+
 .chat-file-button {
+  grid-column: 2;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1771,6 +1832,64 @@ input[type='file'].control {
 
 .chat-file-button input {
   display: none;
+}
+
+.chat-pending-attachments {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.chat-pending-card {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.chat-pending-card img,
+.chat-pending-card span {
+  width: 54px;
+  height: 46px;
+  border-radius: 5px;
+}
+
+.chat-pending-card img {
+  object-fit: cover;
+}
+
+.chat-pending-card span {
+  display: grid;
+  place-items: center;
+  color: var(--gov-blue);
+  background: #e8f2fb;
+}
+
+.chat-pending-card strong {
+  display: block;
+  overflow: hidden;
+  color: var(--gov-navy);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-pending-card button {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  color: #8a1f2d;
+  background: #fff3f5;
+  border: 1px solid #f2c4cc;
+  border-radius: 6px;
 }
 
 .messages-workspace {

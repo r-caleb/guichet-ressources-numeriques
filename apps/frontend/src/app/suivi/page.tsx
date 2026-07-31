@@ -264,7 +264,7 @@ export default function TrackingPage() {
                   className="control"
                   name="additionalDocuments"
                   type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
                   multiple
                   required
                 />
