@@ -125,6 +125,40 @@ export class ChatController {
     return this.chat.listAdminConversations();
   }
 
+  @Get('admin/requests/:requestId')
+  @ApiOperation({
+    summary: "Lire la conversation d'un dossier côté administration",
+    description:
+      "Retourne ou prépare la conversation d'un dossier. Le compte Point Focal doit déjà exister.",
+  })
+  @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  findAdminRequestConversation(@Param('requestId') requestId: string) {
+    return this.chat.findAdminRequestConversation(requestId);
+  }
+
+  @Post('admin/requests/:requestId/messages')
+  @ApiOperation({
+    summary: "Démarrer ou répondre à la conversation d'un dossier",
+    description:
+      "Permet à un agent ou administrateur d'envoyer le premier message d'un dossier ou de poursuivre l'échange.",
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody(messageBodySchema)
+  @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'attachments', maxCount: 5 }], {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  sendAdminRequestMessage(
+    @Req() req: AuthedRequest,
+    @Param('requestId') requestId: string,
+    @Body() dto: SendMessageDto,
+    @UploadedFiles() files: { attachments?: Express.Multer.File[] },
+  ) {
+    return this.chat.sendAdminRequestMessage(requestId, req.user.userId, dto, files.attachments ?? []);
+  }
+
   @Get('admin/conversations/:id')
   @ApiOperation({
     summary: 'Lire une conversation côté administration',

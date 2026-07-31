@@ -68,6 +68,11 @@ export class ChatService {
     return conversation;
   }
 
+  async findAdminRequestConversation(requestId: string) {
+    const conversation = await this.ensureAdminRequestConversation(requestId);
+    return this.findAdminConversation(conversation.id);
+  }
+
   async findPointFocalRequestConversation(requestId: string, userId: string) {
     const conversation = await this.ensureRequestConversation(requestId, userId);
     return this.findPointFocalConversation(conversation.id, userId);
@@ -99,6 +104,17 @@ export class ChatService {
     await this.assertConversationExists(conversationId);
     await this.createMessage(conversationId, senderId, dto, files);
     return this.findAdminConversation(conversationId);
+  }
+
+  async sendAdminRequestMessage(
+    requestId: string,
+    senderId: string,
+    dto: SendMessageDto,
+    files: Express.Multer.File[],
+  ) {
+    const conversation = await this.ensureAdminRequestConversation(requestId);
+    await this.createMessage(conversation.id, senderId, dto, files);
+    return this.findAdminConversation(conversation.id);
   }
 
   async downloadAttachment(attachmentId: string, user: AuthUser) {
@@ -161,6 +177,37 @@ export class ChatService {
         type: ConversationType.REQUEST,
         requestId: request.id,
         pointFocalUserId,
+        subject: `${request.number} - ${request.platformName}`,
+      },
+    });
+  }
+
+  private async ensureAdminRequestConversation(requestId: string) {
+    const request = await this.prisma.resourceRequest.findUnique({
+      where: { id: requestId },
+      select: { id: true, number: true, platformName: true, pointFocalUserId: true },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+    if (!request.pointFocalUserId) {
+      throw new BadRequestException('Créez d’abord le compte Point Focal avant de démarrer la conversation.');
+    }
+
+    const existing = await this.prisma.conversation.findFirst({
+      where: {
+        type: ConversationType.REQUEST,
+        requestId: request.id,
+        pointFocalUserId: request.pointFocalUserId,
+      },
+      select: { id: true },
+    });
+    if (existing) return existing;
+
+    return this.prisma.conversation.create({
+      select: { id: true },
+      data: {
+        type: ConversationType.REQUEST,
+        requestId: request.id,
+        pointFocalUserId: request.pointFocalUserId,
         subject: `${request.number} - ${request.platformName}`,
       },
     });

@@ -47,14 +47,16 @@ export default function PointFocalDashboardPage() {
           <p className="eyebrow">Espace Point Focal</p>
           <h1>Mes dossiers</h1>
         </div>
-        <Link className="button secondary" href="/">
-          <PlusCircle size={18} aria-hidden="true" />
-          Nouvelle demande
-        </Link>
-        <Link className="button secondary" href="/admin/point-focal/messages">
-          <MessageSquare size={18} aria-hidden="true" />
-          Message général
-        </Link>
+        <div className="admin-heading-actions">
+          <Link className="button secondary" href="/">
+            <PlusCircle size={18} aria-hidden="true" />
+            Nouvelle demande
+          </Link>
+          <Link className="button secondary" href="/admin/point-focal/messages">
+            <MessageSquare size={18} aria-hidden="true" />
+            Message général
+          </Link>
+        </div>
       </div>
 
       {error ? <p className="form-alert">{error}</p> : null}
@@ -67,10 +69,6 @@ export default function PointFocalDashboardPage() {
         <div>
           <span>Dossiers en cours</span>
           <strong>{isLoading ? '...' : activeCount}</strong>
-        </div>
-        <div>
-          <span>Messagerie</span>
-          <strong>Active</strong>
         </div>
       </section>
 
@@ -105,10 +103,13 @@ export default function PointFocalDashboardPage() {
                   <Search size={17} aria-hidden="true" />
                   Ouvrir
                 </Link>
-                <button className="button secondary compact-button" type="button" disabled>
+                <Link
+                  className="button secondary compact-button"
+                  href={`/admin/point-focal/dossiers/${request.id}#conversation-dossier`}
+                >
                   <MessageSquare size={17} aria-hidden="true" />
-                  Chat bientôt
-                </button>
+                  Chat dossier
+                </Link>
               </div>
             </article>
           ))}

@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Save, UserPlus } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Save, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
+import { ChatPanel } from '@/components/chat-panel';
 import { TemporaryPasswordField } from '@/components/temporary-password-field';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
   AdminRequestDetail,
+  ChatConversation,
   accessTransmissionOptions,
   adminFetch,
   displayMinistryName,
@@ -50,6 +52,7 @@ export default function AdminRequestDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
+  const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [form, setForm] = useState({
     status: '',
     assignedDomain: '',
@@ -81,6 +84,11 @@ export default function AdminRequestDetailPage() {
           publicObservation: result.publicObservation ?? '',
           rejectionReason: result.rejectionReason ?? '',
         });
+        if (result.pointFocalUser) {
+          adminFetch<ChatConversation>(`/chat/admin/requests/${result.id}`)
+            .then(setConversation)
+            .catch(() => setConversation(null));
+        }
       })
       .catch((exception) => {
         setError(exception instanceof Error ? exception.message : 'Impossible de charger le dossier.');
@@ -161,6 +169,9 @@ export default function AdminRequestDetailPage() {
       });
 
       setRequest((current) => (current ? { ...current, pointFocalUser: result.user } : current));
+      adminFetch<ChatConversation>(`/chat/admin/requests/${request.id}`)
+        .then(setConversation)
+        .catch(() => setConversation(null));
       form.reset();
       setSuccess(
         result.alreadyLinked
@@ -436,6 +447,26 @@ export default function AdminRequestDetailPage() {
                 </li>
               ))}
             </ol>
+          </section>
+
+          <section className="admin-section">
+            <div className="admin-section-title">
+              <h2>Conversation du dossier</h2>
+              <span className="admin-count">
+                <MessageSquare size={17} aria-hidden="true" />
+                Service instructeur
+              </span>
+            </div>
+            {request.pointFocalUser ? (
+              <ChatPanel
+                conversation={conversation}
+                endpoint={`/chat/admin/requests/${request.id}/messages`}
+                emptyText="Aucun message. Vous pouvez démarrer l'échange avec le Point Focal."
+                onConversationChange={setConversation}
+              />
+            ) : (
+              <p className="admin-empty">Créez d'abord le compte Point Focal pour démarrer la conversation.</p>
+            )}
           </section>
         </>
       ) : null}

@@ -334,7 +334,7 @@ export default function PointFocalRequestDetailPage() {
             </ol>
           </section>
 
-          <section className="admin-section">
+          <section className="admin-section" id="conversation-dossier">
             <div className="admin-section-title">
               <h2>Conversation du dossier</h2>
               <span className="admin-count">
