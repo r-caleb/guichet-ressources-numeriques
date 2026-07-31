@@ -96,6 +96,7 @@ export type ChatConversation = {
   id: string;
   type: 'REQUEST' | 'GENERAL';
   status: 'OPEN' | 'RESOLVED' | 'CLOSED';
+  unreadMessages?: number;
   subject?: string | null;
   lastMessageAt?: string | null;
   createdAt: string;

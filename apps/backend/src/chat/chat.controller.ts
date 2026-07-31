@@ -34,7 +34,7 @@ const messageBodySchema = {
       attachments: {
         type: 'array',
         items: { type: 'string', format: 'binary' },
-        description: 'Pièces jointes PDF, Word, JPG ou PNG. Maximum 10 Mo par fichier.',
+        description: 'Pièces jointes PDF, Word, JPG, PNG ou WEBP. Maximum 10 Mo par fichier.',
       },
     },
   },
@@ -56,6 +56,17 @@ export class ChatController {
   @Roles(UserRole.POINT_FOCAL)
   getPointFocalUnreadCount(@Req() req: AuthedRequest) {
     return this.chat.getPointFocalUnreadSummary(req.user.userId);
+  }
+
+  @Get('admin/unread-count')
+  @ApiOperation({
+    summary: 'Compter les messages non lus côté administration',
+    description:
+      'Retourne les messages non lus envoyés par les Points Focaux pour l’agent ou administrateur connecté.',
+  })
+  @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  getAdminUnreadCount(@Req() req: AuthedRequest) {
+    return this.chat.getAdminUnreadSummary(req.user.userId);
   }
 
   @Get('general')
@@ -132,8 +143,8 @@ export class ChatController {
     description: 'Retourne la boîte de réception des conversations liées aux dossiers.',
   })
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  listAdminConversations() {
-    return this.chat.listAdminConversations();
+  listAdminConversations(@Req() req: AuthedRequest) {
+    return this.chat.listAdminConversations(req.user.userId);
   }
 
   @Get('admin/requests/:requestId')
@@ -143,8 +154,8 @@ export class ChatController {
       "Retourne ou prépare la conversation d'un dossier. Le compte Point Focal doit déjà exister.",
   })
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  findAdminRequestConversation(@Param('requestId') requestId: string) {
-    return this.chat.findAdminRequestConversation(requestId);
+  findAdminRequestConversation(@Req() req: AuthedRequest, @Param('requestId') requestId: string) {
+    return this.chat.findAdminRequestConversation(requestId, req.user.userId);
   }
 
   @Post('admin/requests/:requestId/messages')
@@ -176,8 +187,8 @@ export class ChatController {
     description: "Retourne l'historique complet d'une conversation de dossier.",
   })
   @Roles(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  findAdminConversation(@Param('id') id: string) {
-    return this.chat.findAdminConversation(id);
+  findAdminConversation(@Req() req: AuthedRequest, @Param('id') id: string) {
+    return this.chat.findAdminConversation(id, req.user.userId);
   }
 
   @Post('admin/conversations/:id/messages')

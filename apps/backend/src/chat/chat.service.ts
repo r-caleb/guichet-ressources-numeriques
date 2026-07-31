@@ -43,12 +43,17 @@ export class ChatService {
     attachments: { select: this.attachmentSelect, orderBy: { createdAt: 'asc' as const } },
   } satisfies Prisma.MessageInclude;
 
-  async listAdminConversations() {
-    return this.prisma.conversation.findMany({
+  async listAdminConversations(userId: string) {
+    const conversations = await this.prisma.conversation.findMany({
       where: { lastMessageAt: { not: null } },
       include: {
         request: { include: { ministry: true, domainChoices: true } },
         pointFocalUser: { select: this.safeUserSelect },
+        reads: {
+          where: { userId },
+          select: { lastReadAt: true },
+          take: 1,
+        },
         messages: {
           include: this.messageInclude,
           orderBy: { createdAt: 'desc' },
@@ -57,20 +62,60 @@ export class ChatService {
       },
       orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
     });
+
+    return Promise.all(
+      conversations.map(async ({ reads, ...conversation }) => ({
+        ...conversation,
+        unreadMessages: await this.countAdminUnreadMessages(conversation.id, reads[0]?.lastReadAt),
+      })),
+    );
   }
 
-  async findAdminConversation(id: string) {
+  async findAdminConversation(id: string, viewerId?: string) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id },
       include: this.conversationDetailInclude(),
     });
     if (!conversation) throw new NotFoundException('Conversation introuvable.');
+    if (viewerId) await this.markConversationRead(id, viewerId);
     return conversation;
   }
 
-  async findAdminRequestConversation(requestId: string) {
+  async findAdminRequestConversation(requestId: string, viewerId?: string) {
     const conversation = await this.ensureAdminRequestConversation(requestId);
-    return this.findAdminConversation(conversation.id);
+    return this.findAdminConversation(conversation.id, viewerId);
+  }
+
+  async getAdminUnreadSummary(userId: string) {
+    const conversations = await this.prisma.conversation.findMany({
+      where: { lastMessageAt: { not: null } },
+      select: {
+        id: true,
+        reads: {
+          where: { userId },
+          select: { lastReadAt: true },
+          take: 1,
+        },
+      },
+    });
+
+    let total = 0;
+    let conversationsWithUnread = 0;
+
+    for (const conversation of conversations) {
+      const unreadInConversation = await this.countAdminUnreadMessages(
+        conversation.id,
+        conversation.reads[0]?.lastReadAt,
+      );
+
+      total += unreadInConversation;
+      if (unreadInConversation > 0) conversationsWithUnread += 1;
+    }
+
+    return {
+      unreadMessages: total,
+      conversationsWithUnread,
+    };
   }
 
   async getPointFocalUnreadSummary(userId: string) {
@@ -142,7 +187,7 @@ export class ChatService {
   async sendAdminMessage(conversationId: string, senderId: string, dto: SendMessageDto, files: Express.Multer.File[]) {
     await this.assertConversationExists(conversationId);
     await this.createMessage(conversationId, senderId, dto, files);
-    return this.findAdminConversation(conversationId);
+    return this.findAdminConversation(conversationId, senderId);
   }
 
   async sendAdminRequestMessage(
@@ -153,7 +198,7 @@ export class ChatService {
   ) {
     const conversation = await this.ensureAdminRequestConversation(requestId);
     await this.createMessage(conversation.id, senderId, dto, files);
-    return this.findAdminConversation(conversation.id);
+    return this.findAdminConversation(conversation.id, senderId);
   }
 
   async downloadAttachment(attachmentId: string, user: AuthUser) {
@@ -347,6 +392,20 @@ export class ChatService {
         conversationId,
         userId,
         lastReadAt,
+      },
+    });
+  }
+
+  private async countAdminUnreadMessages(conversationId: string, lastReadAt?: Date) {
+    return this.prisma.message.count({
+      where: {
+        conversationId,
+        sender: {
+          roles: {
+            has: UserRole.POINT_FOCAL,
+          },
+        },
+        ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
       },
     });
   }

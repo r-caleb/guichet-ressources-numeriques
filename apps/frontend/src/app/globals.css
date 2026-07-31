@@ -2004,6 +2004,13 @@ input[type='file'].control {
   gap: 8px;
 }
 
+.conversation-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
 .conversation-item mark {
   padding: 4px 7px;
   color: #4a3500;

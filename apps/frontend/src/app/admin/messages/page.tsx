@@ -17,7 +17,7 @@ import {
   statusLabel,
 } from '@/lib/admin-api';
 
-type MessageFilter = 'all' | 'needsReply' | 'request' | 'general';
+type MessageFilter = 'all' | 'unread' | 'needsReply' | 'request' | 'general';
 
 function conversationTitle(conversation: ChatConversation) {
   if (conversation.request) return `${conversation.request.number} - ${conversation.request.platformName}`;
@@ -63,6 +63,11 @@ export default function AdminMessagesPage() {
     setIsLoadingDetail(true);
     try {
       setSelectedConversation(await adminFetch<ChatConversation>(`/chat/admin/conversations/${id}`));
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === id ? { ...conversation, unreadMessages: 0 } : conversation,
+        ),
+      );
     } finally {
       setIsLoadingDetail(false);
     }
@@ -88,6 +93,16 @@ export default function AdminMessagesPage() {
     [conversations],
   );
 
+  const unreadMessagesCount = useMemo(
+    () => conversations.reduce((total, conversation) => total + (conversation.unreadMessages ?? 0), 0),
+    [conversations],
+  );
+
+  const unreadConversationCount = useMemo(
+    () => conversations.filter((conversation) => (conversation.unreadMessages ?? 0) > 0).length,
+    [conversations],
+  );
+
   const requestConversationCount = useMemo(
     () => conversations.filter((conversation) => conversation.type === 'REQUEST').length,
     [conversations],
@@ -99,6 +114,9 @@ export default function AdminMessagesPage() {
   );
 
   const filteredConversations = useMemo(() => {
+    if (messageFilter === 'unread') {
+      return conversations.filter((conversation) => (conversation.unreadMessages ?? 0) > 0);
+    }
     if (messageFilter === 'needsReply') {
       return conversations.filter((conversation) => latestMessageNeedsReply(conversation));
     }
@@ -112,6 +130,7 @@ export default function AdminMessagesPage() {
   }, [conversations, messageFilter]);
 
   function filterCount(filter: MessageFilter) {
+    if (filter === 'unread') return unreadConversationCount;
     if (filter === 'needsReply') return needsReplyCount;
     if (filter === 'request') return requestConversationCount;
     if (filter === 'general') return generalConversationCount;
@@ -132,16 +151,16 @@ export default function AdminMessagesPage() {
 
       <section className="admin-summary-strip">
         <div>
+          <span>Messages non lus</span>
+          <strong>{isLoading ? '...' : unreadMessagesCount}</strong>
+        </div>
+        <div>
+          <span>Conversations non lues</span>
+          <strong>{isLoading ? '...' : unreadConversationCount}</strong>
+        </div>
+        <div>
           <span>À traiter</span>
           <strong>{isLoading ? '...' : needsReplyCount}</strong>
-        </div>
-        <div>
-          <span>Dossiers</span>
-          <strong>{isLoading ? '...' : requestConversationCount}</strong>
-        </div>
-        <div>
-          <span>Questions générales</span>
-          <strong>{isLoading ? '...' : generalConversationCount}</strong>
         </div>
       </section>
 
@@ -154,6 +173,7 @@ export default function AdminMessagesPage() {
           <div className="messages-filterbar" aria-label="Filtres des conversations">
             {[
               { value: 'all', label: 'Toutes' },
+              { value: 'unread', label: 'Non lues' },
               { value: 'needsReply', label: 'À traiter' },
               { value: 'request', label: 'Dossiers' },
               { value: 'general', label: 'Général' },
@@ -172,11 +192,12 @@ export default function AdminMessagesPage() {
           <div className="messages-list">
             {filteredConversations.map((conversation) => {
               const needsReply = latestMessageNeedsReply(conversation);
+              const unreadMessages = conversation.unreadMessages ?? 0;
 
               return (
               <button
                 className={`conversation-item ${conversation.id === selectedId ? 'active' : ''} ${
-                  needsReply ? 'needs-reply' : ''
+                  needsReply || unreadMessages ? 'needs-reply' : ''
                 }`}
                 key={conversation.id}
                 type="button"
@@ -189,7 +210,12 @@ export default function AdminMessagesPage() {
               >
                 <span className="conversation-item-topline">
                   {conversationTypeLabel(conversation)}
-                  {needsReply ? <mark>À traiter</mark> : null}
+                  <span className="conversation-badges">
+                    {unreadMessages ? (
+                      <mark>{unreadMessages} non lu{unreadMessages > 1 ? 's' : ''}</mark>
+                    ) : null}
+                    {needsReply ? <mark>À traiter</mark> : null}
+                  </span>
                 </span>
                 <strong>{conversation.request?.platformName ?? conversation.subject ?? 'Question générale'}</strong>
                 <small>{lastMessageText(conversation)}</small>
