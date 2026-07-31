@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { DocumentsModule } from './documents/documents.module';
 import { MinistriesModule } from './ministries/ministries.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -20,6 +21,7 @@ import { AppService } from './app.service';
     }),
     PrismaModule,
     AuthModule,
+    ChatModule,
     UsersModule,
     MinistriesModule,
     RequestsModule,

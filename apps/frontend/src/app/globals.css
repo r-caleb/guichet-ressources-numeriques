@@ -1624,6 +1624,239 @@ input[type='file'].control {
   border-color: var(--gov-line);
 }
 
+.chat-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.chat-thread {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 320px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 14px;
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: var(--gov-radius);
+}
+
+.chat-message {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.chat-message.mine {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  display: grid;
+  gap: 8px;
+  width: min(680px, 86%);
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.chat-message.mine .chat-bubble {
+  color: #ffffff;
+  background: var(--gov-blue);
+  border-color: var(--gov-blue);
+}
+
+.chat-message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chat-message-meta strong {
+  font-size: 0.84rem;
+}
+
+.chat-message-meta span {
+  color: var(--gov-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.chat-message.mine .chat-message-meta span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.chat-bubble p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.chat-attachments {
+  display: grid;
+  gap: 6px;
+}
+
+.chat-attachment {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 10px;
+  color: var(--gov-blue);
+  background: #f8fbfe;
+  border: 1px solid #b7c6d6;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.chat-message.mine .chat-attachment {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.chat-attachment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-attachment small {
+  font-weight: 800;
+}
+
+.chat-empty {
+  margin: auto;
+  color: var(--gov-muted);
+  font-weight: 800;
+  text-align: center;
+}
+
+.chat-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.chat-composer textarea.control {
+  min-height: 72px;
+}
+
+.chat-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 46px;
+  padding: 0 13px;
+  color: var(--gov-blue);
+  background: #ffffff;
+  border: 1px solid #b7c6d6;
+  border-radius: 6px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.chat-file-button input {
+  display: none;
+}
+
+.messages-workspace {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.36fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.messages-inbox,
+.messages-detail {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--gov-line);
+  border-radius: var(--gov-radius);
+}
+
+.messages-inbox {
+  position: sticky;
+  top: 112px;
+}
+
+.messages-inbox-header,
+.messages-detail-header,
+.messages-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.messages-inbox-header {
+  justify-content: flex-start;
+  color: var(--gov-blue);
+}
+
+.messages-list {
+  display: grid;
+  gap: 8px;
+}
+
+.conversation-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 12px;
+  color: var(--gov-ink);
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.conversation-item.active {
+  border-color: var(--gov-blue);
+  box-shadow: inset 4px 0 0 var(--gov-blue);
+}
+
+.conversation-item span,
+.conversation-item em,
+.messages-detail-header small {
+  color: var(--gov-muted);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.conversation-item small {
+  overflow: hidden;
+  color: var(--gov-muted);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messages-detail-header h2 {
+  margin: 0;
+  color: var(--gov-navy);
+  font-family: var(--font-heading);
+  font-size: 1.08rem;
+}
+
+.messages-placeholder {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  color: var(--gov-muted);
+  text-align: center;
+}
+
 .admin-empty {
   margin: 0;
   padding: 14px;
@@ -1962,6 +2195,25 @@ th {
 
   .point-focal-complement-form {
     grid-template-columns: 1fr;
+  }
+
+  .messages-workspace,
+  .chat-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-inbox {
+    position: static;
+  }
+
+  .messages-detail-header,
+  .messages-detail-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .chat-bubble {
+    width: min(100%, 680px);
   }
 }
 

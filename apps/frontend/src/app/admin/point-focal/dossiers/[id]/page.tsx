@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, FileCheck2, MessageSquare, ShieldCheck, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, ShieldCheck, UploadCloud } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
+import { ChatPanel } from '@/components/chat-panel';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
   AdminRequestDetail,
+  ChatConversation,
   accessTransmissionLabel,
   adminFetch,
   displayMinistryName,
@@ -49,6 +51,7 @@ export default function PointFocalRequestDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
+  const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -60,8 +63,14 @@ export default function PointFocalRequestDetailPage() {
       return;
     }
 
-    adminFetch<AdminRequestDetail>(`/requests/me/${params.id}`)
-      .then(setRequest)
+    Promise.all([
+      adminFetch<AdminRequestDetail>(`/requests/me/${params.id}`),
+      adminFetch<ChatConversation>(`/chat/requests/${params.id}`),
+    ])
+      .then(([requestResult, conversationResult]) => {
+        setRequest(requestResult);
+        setConversation(conversationResult);
+      })
       .catch((exception) => {
         setError(exception instanceof Error ? exception.message : 'Impossible de charger le dossier.');
       })
@@ -325,16 +334,20 @@ export default function PointFocalRequestDetailPage() {
             </ol>
           </section>
 
-          <section className="point-focal-chat-preview">
-            <FileCheck2 size={20} aria-hidden="true" />
-            <div>
-              <span>Prochaine étape</span>
-              <strong>Le chat du dossier sera disponible ici.</strong>
+          <section className="admin-section">
+            <div className="admin-section-title">
+              <h2>Conversation du dossier</h2>
+              <span className="admin-count">
+                <MessageSquare size={17} aria-hidden="true" />
+                Service instructeur
+              </span>
             </div>
-            <button className="button secondary compact-button" type="button" disabled>
-              <MessageSquare size={17} aria-hidden="true" />
-              Chat bientôt
-            </button>
+            <ChatPanel
+              conversation={conversation}
+              endpoint={`/chat/requests/${request.id}/messages`}
+              emptyText="Aucun message pour ce dossier."
+              onConversationChange={setConversation}
+            />
           </section>
         </>
       ) : null}

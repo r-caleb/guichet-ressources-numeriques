@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Building2, FileText, LogOut, Users } from 'lucide-react';
+import { BarChart3, Building2, FileText, LogOut, MessageSquare, Users } from 'lucide-react';
 import { clearAdminSession, getStoredAdminUser } from '@/lib/admin-api';
 
 const links = [
   { href: '/admin/dashboard', label: 'Tableau de bord', icon: BarChart3 },
   { href: '/admin/dossiers', label: 'Dossiers', icon: FileText },
+  { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/ministeres', label: 'Ministères', icon: Building2 },
   { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
 ];

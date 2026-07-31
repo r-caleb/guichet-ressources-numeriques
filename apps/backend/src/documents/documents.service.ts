@@ -6,6 +6,8 @@ import { basename, extname } from 'node:path';
 import { Readable } from 'node:stream';
 import { PrismaService } from '../prisma/prisma.service';
 
+type StoredFile = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName'>;
+
 @Injectable()
 export class DocumentsService {
   private readonly allowedMimeTypes = new Set([
@@ -71,6 +73,24 @@ export class DocumentsService {
     });
   }
 
+  async saveMessageAttachment(conversationId: string, messageId: string, file: Express.Multer.File) {
+    this.assertAllowedRequestFile(file);
+
+    const fileName = this.buildSafeFileName('message-attachment', file.originalname);
+    const storagePath = await this.saveToS3(`conversations/${conversationId}/${messageId}`, fileName, file);
+
+    return this.prisma.messageAttachment.create({
+      data: {
+        messageId,
+        originalName: file.originalname,
+        fileName,
+        mimeType: file.mimetype,
+        size: file.size,
+        localPath: storagePath,
+      },
+    });
+  }
+
   private async saveToS3(dossierNumber: string, fileName: string, file: Express.Multer.File) {
     const key = [this.s3Prefix, dossierNumber, fileName].filter(Boolean).join('/');
 
@@ -107,7 +127,7 @@ export class DocumentsService {
       throw new NotFoundException('Ce document n’est pas disponible dans le stockage S3.');
     }
 
-    return this.getS3Download(document);
+    return this.getStoredFileDownload(document);
   }
 
   async getPointFocalDownload(id: string, userId: string) {
@@ -123,10 +143,10 @@ export class DocumentsService {
       throw new NotFoundException('Ce document n’est pas disponible dans le stockage S3.');
     }
 
-    return this.getS3Download(document);
+    return this.getStoredFileDownload(document);
   }
 
-  private async getS3Download(document: RequestDocument) {
+  async getStoredFileDownload(document: StoredFile) {
     const { bucket, key } = this.parseS3Uri(document.localPath);
     const object = await this.s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
 
@@ -140,14 +160,14 @@ export class DocumentsService {
     };
   }
 
-  private buildSafeFileName(type: DocumentType, originalName: string) {
+  private buildSafeFileName(type: DocumentType | string, originalName: string) {
     const safeBaseName =
       basename(originalName, extname(originalName))
         .toLowerCase()
         .replace(/[^a-z0-9-]+/g, '-')
         .replace(/^-|-$/g, '') || 'document';
 
-    return `${type.toLowerCase()}-${Date.now()}-${safeBaseName}${extname(originalName).toLowerCase()}`;
+    return `${String(type).toLowerCase()}-${Date.now()}-${safeBaseName}${extname(originalName).toLowerCase()}`;
   }
 
   private normalizePrefix(prefix: string) {

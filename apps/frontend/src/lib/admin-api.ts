@@ -75,6 +75,36 @@ export type AuditEvent = {
   createdAt: string;
 };
 
+export type ChatAttachment = {
+  id: string;
+  originalName: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  body?: string | null;
+  createdAt: string;
+  sender: AdminAccount;
+  attachments: ChatAttachment[];
+};
+
+export type ChatConversation = {
+  id: string;
+  type: 'REQUEST' | 'GENERAL';
+  status: 'OPEN' | 'RESOLVED' | 'CLOSED';
+  subject?: string | null;
+  lastMessageAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  request?: (AdminRequestListItem & { focalMiddleName?: string; focalPhone?: string }) | null;
+  pointFocalUser: AdminAccount;
+  messages: ChatMessage[];
+};
+
 export type AdminRequestListItem = {
   id: string;
   number: string;
@@ -275,6 +305,10 @@ export function documentDownloadUrl(documentId: string) {
 
 export function pointFocalDocumentDownloadUrl(documentId: string) {
   return `${API_BASE_URL}/requests/me/documents/${documentId}/download`;
+}
+
+export function chatAttachmentDownloadUrl(attachmentId: string) {
+  return `${API_BASE_URL}/chat/attachments/${attachmentId}/download`;
 }
 
 export { displayMinistryName };

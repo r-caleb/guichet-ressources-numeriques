@@ -84,6 +84,17 @@ enum AuditAction {
   USER_LOGIN
 }
 
+enum ConversationType {
+  REQUEST
+  GENERAL
+}
+
+enum ConversationStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
 model User {
   id        String     @id @default(uuid())
   email     String     @unique
@@ -102,6 +113,8 @@ model User {
 
   instructedRequests ResourceRequest[] @relation("RequestInstructor")
   focalRequests      ResourceRequest[] @relation("PointFocalRequests")
+  focalConversations Conversation[] @relation("PointFocalConversations")
+  sentMessages       Message[] @relation("MessageSender")
   auditEvents        AuditEvent[]
 
   createdAt DateTime @default(now())
@@ -170,6 +183,7 @@ model ResourceRequest {
   domainChoices RequestDomainChoice[]
   documents     RequestDocument[]
   auditEvents   AuditEvent[]
+  conversations Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -210,6 +224,67 @@ model RequestDocument {
 
   @@index([requestId])
   @@index([type])
+}
+
+model Conversation {
+  id     String @id @default(uuid())
+  type   ConversationType
+  status ConversationStatus @default(OPEN)
+
+  requestId String?
+  request   ResourceRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  pointFocalUserId String
+  pointFocalUser   User @relation("PointFocalConversations", fields: [pointFocalUserId], references: [id], onDelete: Cascade)
+
+  subject       String?
+  lastMessageAt DateTime?
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, requestId, pointFocalUserId])
+  @@index([type])
+  @@index([status])
+  @@index([requestId])
+  @@index([pointFocalUserId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  body String?
+  attachments MessageAttachment[]
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model MessageAttachment {
+  id        String @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  originalName String
+  fileName     String
+  mimeType     String
+  size         Int
+  localPath    String
+
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
 }
 
 model AuditEvent {
