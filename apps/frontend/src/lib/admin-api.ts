@@ -314,6 +314,18 @@ export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T
   return response.json() as Promise<T>;
 }
 
+export async function readApiErrorMessage(response: Response, fallback: string) {
+  try {
+    const body = (await response.json()) as { message?: string | string[] };
+    if (Array.isArray(body.message)) return body.message.join(' ');
+    if (typeof body.message === 'string') return body.message;
+  } catch {
+    return response.statusText || fallback;
+  }
+
+  return fallback;
+}
+
 export function buildAdminQuery(filters: ListRequestsFilters) {
   const params = new URLSearchParams();
   if (filters.search) params.set('search', filters.search);

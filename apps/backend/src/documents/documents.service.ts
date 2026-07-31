@@ -1,5 +1,5 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentType, RequestDocument } from '@prisma/client';
 import type { Archiver, ZipOptions } from 'archiver';
@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 type StoredFile = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName'>;
 type ArchiveDocument = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName' | 'type'>;
+type ArchiveEntry = { name: string; buffer: Buffer };
 const createArchiver = require('archiver') as (format: 'zip', options?: ZipOptions) => Archiver;
 
 @Injectable()
@@ -205,12 +206,46 @@ export class DocumentsService {
       throw new BadRequestException('Aucun document à télécharger pour ce dossier.');
     }
 
-    const entries = await Promise.all(
-      documents.map(async (document, index) => ({
-        name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
-        buffer: await this.getStoredFileBuffer(document),
-      })),
-    );
+    const entries: ArchiveEntry[] = [];
+    const unavailableDocuments: string[] = [];
+
+    for (const [index, document] of documents.entries()) {
+      if (!document.localPath.startsWith('s3://')) {
+        unavailableDocuments.push(document.originalName);
+        continue;
+      }
+
+      try {
+        entries.push({
+          name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
+          buffer: await this.getStoredFileBuffer(document),
+        });
+      } catch {
+        unavailableDocuments.push(document.originalName);
+      }
+    }
+
+    if (!entries.length) {
+      throw new BadRequestException(
+        unavailableDocuments.length
+          ? `Aucun document du dossier n’est disponible dans le stockage S3 : ${unavailableDocuments.join(', ')}.`
+          : 'Aucun document à télécharger pour ce dossier.',
+      );
+    }
+
+    if (unavailableDocuments.length) {
+      entries.push({
+        name: 'documents-indisponibles.txt',
+        buffer: Buffer.from(
+          [
+            'Certains documents du dossier ne sont pas disponibles dans le stockage S3.',
+            '',
+            ...unavailableDocuments.map((name) => `- ${name}`),
+          ].join('\n'),
+          'utf8',
+        ),
+      });
+    }
 
     const archive = createArchiver('zip', { zlib: { level: 9 } });
     const stream = new PassThrough();
@@ -258,7 +293,7 @@ export class DocumentsService {
 
   private parseS3Uri(uri: string) {
     const match = uri.match(/^s3:\/\/([^/]+)\/(.+)$/);
-    if (!match) throw new InternalServerErrorException('Référence S3 invalide.');
+    if (!match) throw new BadRequestException('Ce document n’est pas disponible dans le stockage S3.');
 
     return {
       bucket: match[1],

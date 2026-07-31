@@ -20,6 +20,7 @@ import {
   getAdminToken,
   pointFocalDocumentArchiveDownloadUrl,
   pointFocalDocumentDownloadUrl,
+  readApiErrorMessage,
   statusClassName,
   statusLabel,
 } from '@/lib/admin-api';
@@ -113,7 +114,7 @@ export default function PointFocalRequestDetailPage() {
       const response = await fetch(pointFocalDocumentArchiveDownloadUrl(request.id), {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      if (!response.ok) throw new Error('Téléchargement groupé impossible.');
+      if (!response.ok) throw new Error(await readApiErrorMessage(response, 'Téléchargement groupé impossible.'));
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);

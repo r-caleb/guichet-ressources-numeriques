@@ -23,6 +23,7 @@ import {
   formatDateTime,
   getAdminToken,
   getStoredAdminUser,
+  readApiErrorMessage,
   statusClassName,
   statusLabel,
   statusOptions,
@@ -250,7 +251,7 @@ export default function AdminRequestDetailPage() {
       const response = await fetch(documentArchiveDownloadUrl(request.id), {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      if (!response.ok) throw new Error('Téléchargement groupé impossible.');
+      if (!response.ok) throw new Error(await readApiErrorMessage(response, 'Téléchargement groupé impossible.'));
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
