@@ -320,20 +320,6 @@ export default function PointFocalRequestDetailPage() {
             </div>
           </div>
 
-          <section className="admin-section">
-            <div className="admin-section-title">
-              <h2>Historique</h2>
-            </div>
-            <ol className="audit-list">
-              {request.auditEvents.map((event) => (
-                <li key={event.id}>
-                  <span>{formatDateTime(event.createdAt)}</span>
-                  <strong>{formatAuditMessage(event.message)}</strong>
-                </li>
-              ))}
-            </ol>
-          </section>
-
           <section className="admin-section" id="conversation-dossier">
             <div className="admin-section-title">
               <h2>Conversation du dossier</h2>
@@ -348,6 +334,20 @@ export default function PointFocalRequestDetailPage() {
               emptyText="Aucun message pour ce dossier."
               onConversationChange={setConversation}
             />
+          </section>
+
+          <section className="admin-section">
+            <div className="admin-section-title">
+              <h2>Historique</h2>
+            </div>
+            <ol className="audit-list">
+              {request.auditEvents.map((event) => (
+                <li key={event.id}>
+                  <span>{formatDateTime(event.createdAt)}</span>
+                  <strong>{formatAuditMessage(event.message)}</strong>
+                </li>
+              ))}
+            </ol>
           </section>
         </>
       ) : null}
