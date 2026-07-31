@@ -1,8 +1,8 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentType, RequestDocument } from '@prisma/client';
-import type { Archiver, ZipOptions } from 'archiver';
+import { ZipArchive } from 'archiver';
 import { basename, extname } from 'node:path';
 import { PassThrough, Readable } from 'node:stream';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,10 +10,10 @@ import { PrismaService } from '../prisma/prisma.service';
 type StoredFile = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName'>;
 type ArchiveDocument = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName' | 'type'>;
 type ArchiveEntry = { name: string; buffer: Buffer };
-const createArchiver = require('archiver') as (format: 'zip', options?: ZipOptions) => Archiver;
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
   private readonly allowedMimeTypes = new Set([
     'application/pdf',
     'application/msword',
@@ -220,7 +220,10 @@ export class DocumentsService {
           name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
           buffer: await this.getStoredFileBuffer(document),
         });
-      } catch {
+      } catch (error) {
+        this.logger.warn(
+          `Document indisponible pour l'archive ${dossierNumber}: ${document.originalName} (${this.errorMessage(error)})`,
+        );
         unavailableDocuments.push(document.originalName);
       }
     }
@@ -247,7 +250,7 @@ export class DocumentsService {
       });
     }
 
-    const archive = createArchiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
     const stream = new PassThrough();
 
     archive.on('error', (error: Error) => stream.destroy(error));
@@ -299,5 +302,9 @@ export class DocumentsService {
       bucket: match[1],
       key: match[2],
     };
+  }
+
+  private errorMessage(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
   }
 }
