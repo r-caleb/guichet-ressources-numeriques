@@ -75,6 +75,12 @@ export function TemporaryPasswordField({ label, name = 'password' }: TemporaryPa
     }
   }
 
+  function handleGeneratePassword() {
+    setPassword(generateTemporaryPassword());
+    setIsVisible(true);
+    setIsCopied(false);
+  }
+
   return (
     <div className="field password-field">
       <label className="field-label" htmlFor={inputId}>
@@ -105,6 +111,15 @@ export function TemporaryPasswordField({ label, name = 'password' }: TemporaryPa
         <button
           className="icon-action"
           type="button"
+          onClick={handleGeneratePassword}
+          title="Générer un mot de passe"
+          aria-label="Générer un mot de passe"
+        >
+          <Wand2 size={17} aria-hidden="true" />
+        </button>
+        <button
+          className="icon-action"
+          type="button"
           onClick={copyPassword}
           disabled={!password}
           title="Copier le mot de passe"
@@ -113,18 +128,6 @@ export function TemporaryPasswordField({ label, name = 'password' }: TemporaryPa
           {isCopied ? <Check size={17} aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
         </button>
       </div>
-      <button
-        className="button secondary password-generate-button"
-        type="button"
-        onClick={() => {
-          setPassword(generateTemporaryPassword());
-          setIsVisible(true);
-          setIsCopied(false);
-        }}
-      >
-        <Wand2 size={17} aria-hidden="true" />
-        Générer
-      </button>
     </div>
   );
 }
