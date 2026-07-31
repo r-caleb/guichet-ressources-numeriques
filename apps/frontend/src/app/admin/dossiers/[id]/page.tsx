@@ -12,6 +12,7 @@ import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@
 import {
   AdminAccount,
   AdminRequestDetail,
+  AdminUser,
   ChatConversation,
   accessTransmissionOptions,
   adminFetch,
@@ -89,6 +90,7 @@ export default function AdminRequestDetailPage() {
   const router = useRouter();
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
   const [assignableUsers, setAssignableUsers] = useState<AdminAccount[]>([]);
   const [assignmentValue, setAssignmentValue] = useState('');
   const [form, setForm] = useState({
@@ -105,7 +107,6 @@ export default function AdminRequestDetailPage() {
   const [isCreatingPointFocal, setIsCreatingPointFocal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const currentUser = getStoredAdminUser();
   const canAssign = currentUser?.roles.some((role) => ['SUPER_ADMIN', 'ADMIN'].includes(role)) ?? false;
   const canAssignAdministrators = currentUser?.roles.includes('SUPER_ADMIN') ?? false;
   const closingMissingItems =
@@ -122,6 +123,8 @@ export default function AdminRequestDetailPage() {
       router.replace('/admin/login');
       return;
     }
+
+    setCurrentUser(getStoredAdminUser());
 
     adminFetch<AdminRequestDetail>(`/requests/admin/${params.id}`)
       .then((result) => {

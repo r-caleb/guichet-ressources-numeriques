@@ -200,10 +200,17 @@ export class DocumentsService {
     return `${String(type).toLowerCase()}-${Date.now()}-${safeBaseName}${extname(originalName).toLowerCase()}`;
   }
 
-  private createDocumentsArchive(dossierNumber: string, documents: ArchiveDocument[]) {
+  private async createDocumentsArchive(dossierNumber: string, documents: ArchiveDocument[]) {
     if (!documents.length) {
       throw new BadRequestException('Aucun document à télécharger pour ce dossier.');
     }
+
+    const entries = await Promise.all(
+      documents.map(async (document, index) => ({
+        name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
+        buffer: await this.getStoredFileBuffer(document),
+      })),
+    );
 
     const archive = createArchiver('zip', { zlib: { level: 9 } });
     const stream = new PassThrough();
@@ -211,7 +218,11 @@ export class DocumentsService {
     archive.on('error', (error: Error) => stream.destroy(error));
     archive.pipe(stream);
 
-    void this.appendDocumentsToArchive(archive, documents).catch((error) => archive.destroy(error));
+    for (const entry of entries) {
+      archive.append(entry.buffer, { name: entry.name });
+    }
+
+    void archive.finalize().catch((error) => stream.destroy(error));
 
     return {
       fileName: `documents-${dossierNumber}.zip`,
@@ -219,15 +230,15 @@ export class DocumentsService {
     };
   }
 
-  private async appendDocumentsToArchive(archive: Archiver, documents: ArchiveDocument[]) {
-    for (const [index, document] of documents.entries()) {
-      const { stream } = await this.getStoredFileDownload(document);
-      archive.append(stream, {
-        name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
-      });
+  private async getStoredFileBuffer(document: StoredFile) {
+    const { stream } = await this.getStoredFileDownload(document);
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
 
-    await archive.finalize();
+    return Buffer.concat(chunks);
   }
 
   private buildArchiveEntryName(document: ArchiveDocument) {

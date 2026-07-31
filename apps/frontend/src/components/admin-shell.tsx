@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarChart3, Building2, FileText, LogOut, MessageSquare, UserCircle, Users } from 'lucide-react';
-import { clearAdminSession, getStoredAdminUser } from '@/lib/admin-api';
+import { useEffect, useState } from 'react';
+import { AdminUser, clearAdminSession, getStoredAdminUser } from '@/lib/admin-api';
 
 const links = [
   { href: '/admin/dashboard', label: 'Tableau de bord', icon: BarChart3 },
@@ -17,7 +18,12 @@ const links = [
 export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const user = getStoredAdminUser();
+  const [user, setUser] = useState<AdminUser | null>(null);
+
+  useEffect(() => {
+    setUser(getStoredAdminUser());
+  }, []);
+
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Agent';
   const isPointFocalOnly =
     user?.roles?.includes('POINT_FOCAL') &&
