@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { Prisma, UserRole } from '@prisma/client';
+import { AuditAction, Prisma, UserRole } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { AuthUser } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -8,7 +9,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   private readonly safeUserSelect = {
     id: true,
@@ -127,11 +131,20 @@ export class UsersService {
 
     this.assertCanManageRoles(actor, existing.roles);
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       select: this.safeUserSelect,
       data: { password: await argon2.hash(password) },
     });
+
+    await this.audit.record({
+      action: AuditAction.PASSWORD_CHANGED,
+      actorId: actor.userId,
+      message: `Mot de passe réinitialisé pour ${existing.email}.`,
+      metadata: { targetUserId: id, targetEmail: existing.email, targetRoles: existing.roles },
+    });
+
+    return updated;
   }
 
   async updateOwnPassword(id: string, password: string) {
