@@ -24,6 +24,7 @@ export type AdminAccount = {
   functionTitle?: string | null;
   department?: string | null;
   ministryId?: string | null;
+  ministry?: Ministry | null;
   otherInstitutionName?: string | null;
   roles: UserRole[];
   isActive: boolean;

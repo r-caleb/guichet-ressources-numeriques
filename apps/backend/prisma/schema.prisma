@@ -82,6 +82,7 @@ enum AuditAction {
   RESOURCE_ASSIGNED
   REQUEST_CLOSED
   USER_LOGIN
+  PASSWORD_CHANGED
 }
 
 enum ConversationType {

@@ -1039,6 +1039,41 @@ input[type='file'].control {
   font-size: 1.35rem;
 }
 
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.account-card {
+  min-height: 100%;
+  align-content: start;
+}
+
+.account-password-form,
+.account-guidance {
+  display: grid;
+  gap: 12px;
+}
+
+.account-guidance {
+  align-content: start;
+  min-height: 100%;
+  padding: 14px;
+  color: var(--gov-ink);
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+}
+
+.account-guidance p {
+  margin: 0;
+  color: var(--gov-muted);
+  font-weight: 750;
+  line-height: 1.55;
+}
+
 .admin-section {
   display: grid;
   gap: 14px;
@@ -2336,6 +2371,7 @@ th {
   .tracking-steps,
   .tracking-summary-grid,
   .admin-summary-strip,
+  .account-grid,
   .admin-filter-bar,
   .admin-inline-form,
   .users-inline-form,

@@ -36,6 +36,13 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  findPublicProfile(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: this.safeUserSelect,
+    });
+  }
+
   create(data: Prisma.UserCreateInput) {
     return this.prisma.user.create({ data });
   }
@@ -120,6 +127,14 @@ export class UsersService {
 
     this.assertCanManageRoles(actor, existing.roles);
 
+    return this.prisma.user.update({
+      where: { id },
+      select: this.safeUserSelect,
+      data: { password: await argon2.hash(password) },
+    });
+  }
+
+  async updateOwnPassword(id: string, password: string) {
     return this.prisma.user.update({
       where: { id },
       select: this.safeUserSelect,

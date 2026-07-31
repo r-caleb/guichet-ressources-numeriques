@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, Building2, FileText, LogOut, MessageSquare, Users } from 'lucide-react';
+import { BarChart3, Building2, FileText, LogOut, MessageSquare, UserCircle, Users } from 'lucide-react';
 import { clearAdminSession, getStoredAdminUser } from '@/lib/admin-api';
 
 const links = [
@@ -11,6 +11,7 @@ const links = [
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/ministeres', label: 'Ministères', icon: Building2 },
   { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
+  { href: '/admin/compte', label: 'Compte', icon: UserCircle },
 ];
 
 export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -25,6 +26,7 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
     ? [
         { href: '/admin/point-focal', label: 'Mes dossiers', icon: FileText },
         { href: '/admin/point-focal/messages', label: 'Message général', icon: MessageSquare },
+        { href: '/admin/compte', label: 'Compte', icon: UserCircle },
       ]
     : links;
 
