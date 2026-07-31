@@ -1188,12 +1188,17 @@ input[type='file'].control {
 
 .password-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, 36px);
+  grid-template-columns: minmax(0, 1fr) repeat(3, 46px);
   gap: 6px;
 }
 
 .password-control .control {
   min-width: 0;
+}
+
+.password-control .icon-action {
+  width: 46px;
+  height: 46px;
 }
 
 .password-control .icon-action:disabled {
