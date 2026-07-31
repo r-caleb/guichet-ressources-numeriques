@@ -469,6 +469,7 @@ export class RequestsService {
             id: true,
             action: true,
             message: true,
+            actor: { select: this.safeUserSelect },
             createdAt: true,
           },
           orderBy: { createdAt: 'asc' },
@@ -710,7 +711,7 @@ export class RequestsService {
     previous: { status: RequestStatus; assignedDomain?: string | null; accessTransmissionMode?: AccessTransmissionMode | null },
     updated: { status: RequestStatus; assignedDomain?: string | null; accessTransmissionMode?: AccessTransmissionMode | null },
   ) {
-    const changes = [`Statut : ${this.statusLabel(previous.status)} -> ${this.statusLabel(updated.status)}`];
+    const changes = [`Décision : ${this.statusLabel(previous.status)} -> ${this.statusLabel(updated.status)}`];
 
     if (previous.assignedDomain !== updated.assignedDomain) {
       changes.push(`Domaine attribué : ${updated.assignedDomain || 'Non attribué'}`);
@@ -720,6 +721,6 @@ export class RequestsService {
       changes.push(`Transmission des accès : ${this.accessTransmissionLabel(updated.accessTransmissionMode)}`);
     }
 
-    return `Instruction enregistrée. ${changes.join(' ; ')}.`;
+    return `Décision enregistrée. ${changes.join(' ; ')}.`;
   }
 }

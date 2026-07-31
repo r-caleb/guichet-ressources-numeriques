@@ -1538,7 +1538,7 @@ input[type='file'].control {
 }
 
 .dossier-stack:first-child {
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
 }
 
 .dossier-stack:first-child .admin-section:last-child {
@@ -1648,10 +1648,14 @@ input[type='file'].control {
 }
 
 .audit-list-header em {
+  padding: 4px 8px;
   color: var(--gov-blue);
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 900;
+  background: #eef4fb;
+  border: 1px solid #c9d8e7;
+  border-radius: 999px;
   text-transform: uppercase;
 }
 
@@ -1699,6 +1703,10 @@ input[type='file'].control {
 }
 
 .point-focal-document-grid {
+  grid-template-columns: 1fr;
+}
+
+.admin-detail-document-grid {
   grid-template-columns: 1fr;
 }
 

@@ -223,6 +223,21 @@ export function documentTypeLabel(type: string) {
   );
 }
 
+export function auditActionLabel(action: string) {
+  return (
+    {
+      REQUEST_CREATED: 'Dépôt',
+      STATUS_CHANGED: 'Décision',
+      DOCUMENT_ADDED: 'Document',
+      ADMIN_NOTE_ADDED: 'Administration',
+      RESOURCE_ASSIGNED: 'Ressources',
+      REQUEST_CLOSED: 'Clôture',
+      USER_LOGIN: 'Connexion',
+      PASSWORD_CHANGED: 'Mot de passe',
+    }[action] ?? 'Action'
+  );
+}
+
 export function formatDate(value?: string | null) {
   if (!value) return 'Non renseigné';
   return new Intl.DateTimeFormat('fr-CD', {

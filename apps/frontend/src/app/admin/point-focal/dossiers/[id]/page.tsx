@@ -12,6 +12,7 @@ import {
   ChatConversation,
   accessTransmissionLabel,
   adminFetch,
+  auditActionLabel,
   displayMinistryName,
   documentTypeLabel,
   formatDate,
@@ -30,6 +31,23 @@ function requestTypeLabels(values: string[]) {
   return values.map((value) => optionLabel(requestTypes, value)).join(', ');
 }
 
+function actorName(actor?: AdminRequestDetail['auditEvents'][number]['actor']) {
+  if (!actor) return 'Service instructeur';
+  return [actor.firstName, actor.lastName].filter(Boolean).join(' ') || actor.email;
+}
+
+function actorRole(actor?: AdminRequestDetail['auditEvents'][number]['actor']) {
+  if (!actor) return 'Action système';
+  const roleLabels: Record<string, string> = {
+    SUPER_ADMIN: 'Super administrateur',
+    ADMIN: 'Administrateur',
+    AGENT: 'Agent',
+    POINT_FOCAL: 'Point Focal',
+  };
+
+  return actor.roles.map((role) => roleLabels[role] ?? role).join(', ');
+}
+
 function formatAuditMessage(message: string) {
   const translations: Record<string, string> = {
     RECEIVED: 'Reçue',
@@ -39,6 +57,8 @@ function formatAuditMessage(message: string) {
     REJECTED: 'Rejetée',
     RESOURCES_ASSIGNED: 'Ressources attribuées',
     CLOSED: 'Clôturée',
+    'Instruction enregistrée.': 'Décision enregistrée.',
+    'Statut :': 'Décision :',
   };
 
   return Object.entries(translations).reduce(
@@ -343,8 +363,14 @@ export default function PointFocalRequestDetailPage() {
             <ol className="audit-list">
               {request.auditEvents.map((event) => (
                 <li key={event.id}>
-                  <span>{formatDateTime(event.createdAt)}</span>
+                  <div className="audit-list-header">
+                    <span>{formatDateTime(event.createdAt)}</span>
+                    <em>{auditActionLabel(event.action)}</em>
+                  </div>
                   <strong>{formatAuditMessage(event.message)}</strong>
+                  <small>
+                    {actorName(event.actor)} - {actorRole(event.actor)}
+                  </small>
                 </li>
               ))}
             </ol>

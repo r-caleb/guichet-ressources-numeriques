@@ -14,6 +14,7 @@ import {
   ChatConversation,
   accessTransmissionOptions,
   adminFetch,
+  auditActionLabel,
   displayMinistryName,
   documentDownloadUrl,
   documentTypeLabel,
@@ -42,6 +43,8 @@ function formatAuditMessage(message: string) {
     REJECTED: 'Rejetée',
     RESOURCES_ASSIGNED: 'Ressources attribuées',
     CLOSED: 'Clôturée',
+    'Instruction enregistrée.': 'Décision enregistrée.',
+    'Statut :': 'Décision :',
   };
 
   return Object.entries(translations).reduce(
@@ -439,6 +442,31 @@ export default function AdminRequestDetailPage() {
                   ))}
                 </ul>
               </section>
+
+              <section className="admin-section">
+                <div className="admin-section-title">
+                  <h2>Documents transmis</h2>
+                </div>
+                <div className="document-grid admin-detail-document-grid">
+                  {request.documents.map((document) => (
+                    <article className="document-card" key={document.id}>
+                      <div>
+                        <span>{documentTypeLabel(document.type)}</span>
+                        <strong>{document.originalName}</strong>
+                        <small>{Math.ceil(document.size / 1024)} Ko</small>
+                      </div>
+                      <button
+                        className="icon-action"
+                        type="button"
+                        onClick={() => handleDownloadDocument(document.id, document.originalName)}
+                        aria-label={`Télécharger ${document.originalName}`}
+                      >
+                        <Download size={17} aria-hidden="true" />
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </div>
 
             <div className="dossier-stack">
@@ -581,31 +609,6 @@ export default function AdminRequestDetailPage() {
             </div>
           </div>
 
-          <section className="admin-section">
-            <div className="admin-section-title">
-              <h2>Documents transmis</h2>
-            </div>
-            <div className="document-grid">
-              {request.documents.map((document) => (
-                <article className="document-card" key={document.id}>
-                  <div>
-                    <span>{documentTypeLabel(document.type)}</span>
-                    <strong>{document.originalName}</strong>
-                    <small>{Math.ceil(document.size / 1024)} Ko</small>
-                  </div>
-                  <button
-                    className="icon-action"
-                    type="button"
-                    onClick={() => handleDownloadDocument(document.id, document.originalName)}
-                    aria-label={`Télécharger ${document.originalName}`}
-                  >
-                    <Download size={17} aria-hidden="true" />
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
-
           <section className="admin-section" id="conversation-dossier">
             <div className="admin-section-title">
               <h2>Conversation du dossier</h2>
@@ -635,10 +638,12 @@ export default function AdminRequestDetailPage() {
                 <li key={event.id}>
                   <div className="audit-list-header">
                     <span>{formatDateTime(event.createdAt)}</span>
-                    <em>{actorRole(event.actor)}</em>
+                    <em>{auditActionLabel(event.action)}</em>
                   </div>
                   <strong>{formatAuditMessage(event.message)}</strong>
-                  <small>{actorName(event.actor)}</small>
+                  <small>
+                    {actorName(event.actor)} - {actorRole(event.actor)}
+                  </small>
                 </li>
               ))}
             </ol>
