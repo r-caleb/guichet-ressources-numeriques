@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, FileCheck2, MessageSquare, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Download, FileCheck2, MessageSquare, ShieldCheck, UploadCloud } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
@@ -54,7 +54,9 @@ export default function PointFocalRequestDetailPage() {
   const router = useRouter();
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!getAdminToken()) {
@@ -92,6 +94,34 @@ export default function PointFocalRequestDetailPage() {
     }
   }
 
+  async function handleUploadAdditionalDocuments(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!request) return;
+
+    setError('');
+    setSuccess('');
+    setIsUploading(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const updated = await adminFetch<AdminRequestDetail>(`/requests/me/${request.id}/additional-documents`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      setRequest(updated);
+      form.reset();
+      setSuccess('Compléments transmis. Le dossier est revenu en instruction.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : 'Transmission impossible.');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   return (
     <AdminShell>
       <div className="admin-heading">
@@ -106,6 +136,7 @@ export default function PointFocalRequestDetailPage() {
       </div>
 
       {error ? <p className="form-alert">{error}</p> : null}
+      {success ? <p className="form-alert success">{success}</p> : null}
       {isLoading ? <p className="admin-empty">Chargement du dossier...</p> : null}
 
       {request ? (
@@ -132,6 +163,40 @@ export default function PointFocalRequestDetailPage() {
                 <span>Observation de l'administration</span>
                 <strong>{request.publicObservation}</strong>
               </div>
+            </section>
+          ) : null}
+
+          {request.status === 'ADDITIONAL_DOCUMENTS_REQUESTED' ? (
+            <section className="admin-section point-focal-complement-section">
+              <div className="admin-section-title">
+                <h2>Transmettre les compléments</h2>
+              </div>
+              <form className="point-focal-complement-form" onSubmit={handleUploadAdditionalDocuments}>
+                <label className="field">
+                  Message au service instructeur
+                  <textarea
+                    className="control"
+                    name="message"
+                    maxLength={600}
+                    placeholder="Précisez brièvement les éléments transmis."
+                  />
+                </label>
+                <label className="field">
+                  Documents complémentaires
+                  <input
+                    className="control"
+                    name="additionalDocuments"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    multiple
+                    required
+                  />
+                </label>
+                <button className="button primary" type="submit" disabled={isUploading}>
+                  <UploadCloud size={18} aria-hidden="true" />
+                  {isUploading ? 'Transmission...' : 'Transmettre les compléments'}
+                </button>
+              </form>
             </section>
           ) : null}
 

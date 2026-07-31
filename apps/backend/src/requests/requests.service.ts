@@ -15,6 +15,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AdditionalDocumentsDto } from './dto/additional-documents.dto';
 import { CreateResourceRequestDto } from './dto/create-resource-request.dto';
 import { ListRequestsQueryDto } from './dto/list-requests.query.dto';
+import { PointFocalAdditionalDocumentsDto } from './dto/point-focal-additional-documents.dto';
 import { TrackRequestDto } from './dto/track-request.dto';
 import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 
@@ -396,6 +397,55 @@ export class RequestsService {
 
     if (!request) throw new NotFoundException('Dossier introuvable.');
     return request;
+  }
+
+  async addPointFocalAdditionalDocuments(
+    id: string,
+    userId: string,
+    dto: PointFocalAdditionalDocumentsDto,
+    files: Express.Multer.File[],
+  ) {
+    if (!files.length) {
+      throw new BadRequestException('Au moins un document complémentaire doit être transmis.');
+    }
+
+    const request = await this.prisma.resourceRequest.findFirst({
+      where: { id, pointFocalUserId: userId },
+      select: { id: true, number: true, status: true },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    if (request.status !== RequestStatus.ADDITIONAL_DOCUMENTS_REQUESTED) {
+      throw new BadRequestException(
+        'Les compléments ne sont attendus que lorsque le dossier est au statut Compléments demandés.',
+      );
+    }
+
+    for (const file of files) {
+      await this.documents.saveRequestFile(request.id, request.number, DocumentType.ADDITIONAL_DOCUMENT, file);
+    }
+
+    await this.prisma.resourceRequest.update({
+      where: { id: request.id },
+      data: { status: RequestStatus.UNDER_REVIEW, publicObservation: null },
+    });
+
+    await this.audit.record({
+      action: AuditAction.DOCUMENT_ADDED,
+      requestId: request.id,
+      actorId: userId,
+      message: `${files.length} document(s) complémentaire(s) transmis par le Point Focal.`,
+      metadata: dto.message ? { pointFocalMessage: dto.message } : undefined,
+    });
+
+    await this.audit.record({
+      action: AuditAction.STATUS_CHANGED,
+      requestId: request.id,
+      actorId: userId,
+      message: 'Statut modifié : Compléments demandés -> En instruction.',
+    });
+
+    return this.findPointFocalDetail(request.id, userId);
   }
 
   async addAdditionalDocuments(dto: AdditionalDocumentsDto, files: Express.Multer.File[]) {

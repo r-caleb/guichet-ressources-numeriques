@@ -26,6 +26,7 @@ import { CheckDomainQueryDto } from './dto/check-domain.query.dto';
 import { CreatePointFocalAccountDto } from './dto/create-point-focal-account.dto';
 import { CreateResourceRequestDto } from './dto/create-resource-request.dto';
 import { ListRequestsQueryDto } from './dto/list-requests.query.dto';
+import { PointFocalAdditionalDocumentsDto } from './dto/point-focal-additional-documents.dto';
 import { ReceiptRequestDto } from './dto/receipt-request.dto';
 import { TrackRequestDto } from './dto/track-request.dto';
 import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
@@ -230,6 +231,52 @@ export class RequestsController {
     response.setHeader('Content-Type', document.mimeType);
     response.setHeader('Content-Disposition', `attachment; filename="${document.originalName}"`);
     stream.pipe(response);
+  }
+
+  @Post('me/:id/additional-documents')
+  @ApiOperation({
+    summary: 'Transmettre des compléments sur un dossier connecté',
+    description:
+      'Permet au Point Focal connecté de joindre les documents demandés par l’administration sur son propre dossier.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['additionalDocuments'],
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Veuillez trouver ci-joint la lettre corrigée.',
+        },
+        additionalDocuments: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'Documents PDF, Word, JPG ou PNG. Maximum 10 Mo par fichier.',
+        },
+      },
+    },
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.POINT_FOCAL)
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'additionalDocuments', maxCount: 5 }], {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  addMyAdditionalDocuments(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Body() dto: PointFocalAdditionalDocumentsDto,
+    @UploadedFiles() files: { additionalDocuments?: Express.Multer.File[] },
+  ) {
+    return this.requests.addPointFocalAdditionalDocuments(
+      id,
+      req.user?.userId ?? '',
+      dto,
+      files.additionalDocuments ?? [],
+    );
   }
 
   @Get('me/:id')

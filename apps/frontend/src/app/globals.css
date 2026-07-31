@@ -1565,6 +1565,21 @@ input[type='file'].control {
   grid-template-columns: 1fr;
 }
 
+.point-focal-complement-section {
+  border-color: #ead17a;
+}
+
+.point-focal-complement-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.point-focal-complement-form textarea.control {
+  min-height: 92px;
+}
+
 .point-focal-alert,
 .point-focal-chat-preview {
   display: flex;
@@ -1943,6 +1958,10 @@ th {
   .point-focal-chat-preview {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .point-focal-complement-form {
+    grid-template-columns: 1fr;
   }
 }
 
