@@ -502,24 +502,6 @@ export default function AdminRequestDetailPage() {
 
           <section className="admin-section" id="conversation-dossier">
             <div className="admin-section-title">
-              <h2>Historique</h2>
-            </div>
-            <ol className="audit-list">
-              {request.auditEvents.map((event) => (
-                <li key={event.id}>
-                  <div className="audit-list-header">
-                    <span>{formatDateTime(event.createdAt)}</span>
-                    <em>{actorRole(event.actor)}</em>
-                  </div>
-                  <strong>{formatAuditMessage(event.message)}</strong>
-                  <small>{actorName(event.actor)}</small>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section className="admin-section">
-            <div className="admin-section-title">
               <h2>Conversation du dossier</h2>
               <span className="admin-count">
                 <MessageSquare size={17} aria-hidden="true" />
@@ -536,6 +518,24 @@ export default function AdminRequestDetailPage() {
             ) : (
               <p className="admin-empty">Créez d'abord le compte Point Focal pour démarrer la conversation.</p>
             )}
+          </section>
+
+          <section className="admin-section">
+            <div className="admin-section-title">
+              <h2>Historique</h2>
+            </div>
+            <ol className="audit-list">
+              {request.auditEvents.map((event) => (
+                <li key={event.id}>
+                  <div className="audit-list-header">
+                    <span>{formatDateTime(event.createdAt)}</span>
+                    <em>{actorRole(event.actor)}</em>
+                  </div>
+                  <strong>{formatAuditMessage(event.message)}</strong>
+                  <small>{actorName(event.actor)}</small>
+                </li>
+              ))}
+            </ol>
           </section>
         </>
       ) : null}
