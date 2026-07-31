@@ -34,7 +34,11 @@ export class UpdateRequestStatusDto {
   @MaxLength(120)
   assignedDomain?: string;
 
-  @ApiPropertyOptional({ enum: AccessTransmissionMode, example: AccessTransmissionMode.OFFICIAL_LETTER })
+  @ApiPropertyOptional({
+    enum: [AccessTransmissionMode.PLATFORM, AccessTransmissionMode.OFFICIAL_EMAIL],
+    example: AccessTransmissionMode.PLATFORM,
+    description: 'Modes actifs : transmission dans la plateforme ou par email.',
+  })
   @IsOptional()
   @IsEnum(AccessTransmissionMode)
   accessTransmissionMode?: AccessTransmissionMode;

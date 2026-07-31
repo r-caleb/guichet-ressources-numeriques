@@ -68,6 +68,7 @@ enum DocumentType {
 }
 
 enum AccessTransmissionMode {
+  PLATFORM
   OFFICIAL_LETTER
   OFFICIAL_EMAIL
   PHYSICAL_HANDOVER

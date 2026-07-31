@@ -8,7 +8,7 @@ import { AdminShell } from '@/components/admin-shell';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
   AdminRequestDetail,
-  accessTransmissionOptions,
+  accessTransmissionLabel,
   adminFetch,
   displayMinistryName,
   documentTypeLabel,
@@ -26,10 +26,6 @@ function optionLabel(options: Array<{ label: string; value: string }>, value?: s
 
 function requestTypeLabels(values: string[]) {
   return values.map((value) => optionLabel(requestTypes, value)).join(', ');
-}
-
-function accessTransmissionLabel(value?: string | null) {
-  return accessTransmissionOptions.find((option) => option.value === value)?.label ?? 'Non renseigné';
 }
 
 function formatAuditMessage(message: string) {

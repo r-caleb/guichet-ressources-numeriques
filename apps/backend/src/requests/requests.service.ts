@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import {
+  AccessTransmissionMode,
   AuditAction,
   DocumentType,
   DomainChoiceRank,
@@ -521,6 +522,15 @@ export class RequestsService {
   private assertValidStatusUpdate(dto: UpdateRequestStatusDto) {
     if (dto.status === RequestStatus.RESOURCES_ASSIGNED && !dto.assignedDomain) {
       throw new BadRequestException("Le domaine attribué est obligatoire lorsque les ressources sont attribuées.");
+    }
+
+    const allowedAccessTransmissionModes: AccessTransmissionMode[] = [
+      AccessTransmissionMode.PLATFORM,
+      AccessTransmissionMode.OFFICIAL_EMAIL,
+    ];
+
+    if (dto.accessTransmissionMode && !allowedAccessTransmissionModes.includes(dto.accessTransmissionMode)) {
+      throw new BadRequestException('Les accès doivent être transmis dans la plateforme ou par email.');
     }
 
     if (

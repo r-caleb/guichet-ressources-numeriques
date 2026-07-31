@@ -118,7 +118,7 @@ export type AdminRequestDetail = AdminRequestListItem & {
   hostingAssigned?: boolean;
   resourcesCreatedAt?: string | null;
   accessDeliveredAt?: string | null;
-  accessTransmissionMode?: 'OFFICIAL_LETTER' | 'OFFICIAL_EMAIL' | 'PHYSICAL_HANDOVER' | null;
+  accessTransmissionMode?: 'PLATFORM' | 'OFFICIAL_EMAIL' | 'OFFICIAL_LETTER' | 'PHYSICAL_HANDOVER' | null;
   administrativeNotes?: string | null;
   publicObservation?: string | null;
   rejectionReason?: string | null;
@@ -146,10 +146,23 @@ export const statusOptions: Array<{ value: RequestStatus; label: string }> = [
 
 export const accessTransmissionOptions = [
   { value: '', label: 'Non renseigné' },
-  { value: 'OFFICIAL_LETTER', label: 'Lettre officielle' },
-  { value: 'OFFICIAL_EMAIL', label: 'Email officiel' },
-  { value: 'PHYSICAL_HANDOVER', label: 'Remise physique' },
+  { value: 'PLATFORM', label: 'Plateforme' },
+  { value: 'OFFICIAL_EMAIL', label: 'Email' },
 ];
+
+const historicalAccessTransmissionLabels: Record<string, string> = {
+  OFFICIAL_LETTER: 'Lettre officielle',
+  PHYSICAL_HANDOVER: 'Remise physique',
+};
+
+export function accessTransmissionLabel(value?: string | null) {
+  if (!value) return 'Non renseigné';
+  return (
+    accessTransmissionOptions.find((option) => option.value === value)?.label ??
+    historicalAccessTransmissionLabels[value] ??
+    value
+  );
+}
 
 export function statusLabel(status: string) {
   return statusOptions.find((option) => option.value === status)?.label ?? status;
