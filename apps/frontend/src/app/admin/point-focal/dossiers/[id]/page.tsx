@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, MessageSquare, ShieldCheck, UploadCloud } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
 import { ChatPanel } from '@/components/chat-panel';
+import { DocumentCard } from '@/components/document-card';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
 import {
   AdminRequestDetail,
@@ -14,10 +15,10 @@ import {
   adminFetch,
   auditActionLabel,
   displayMinistryName,
-  documentTypeLabel,
   formatDate,
   formatDateTime,
   getAdminToken,
+  pointFocalDocumentArchiveDownloadUrl,
   pointFocalDocumentDownloadUrl,
   statusClassName,
   statusLabel,
@@ -99,6 +100,30 @@ export default function PointFocalRequestDetailPage() {
       URL.revokeObjectURL(url);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Téléchargement impossible.');
+    }
+  }
+
+  async function handleDownloadAllDocuments() {
+    if (!request) return;
+
+    setError('');
+
+    try {
+      const token = getAdminToken();
+      const response = await fetch(pointFocalDocumentArchiveDownloadUrl(request.id), {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!response.ok) throw new Error('Téléchargement groupé impossible.');
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `documents-${request.number}.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : 'Téléchargement groupé impossible.');
     }
   }
 
@@ -299,24 +324,25 @@ export default function PointFocalRequestDetailPage() {
               <section className="admin-section">
                 <div className="admin-section-title">
                   <h2>Documents</h2>
+                  <button
+                    className="button secondary compact-button"
+                    type="button"
+                    onClick={handleDownloadAllDocuments}
+                    disabled={!request.documents.length}
+                  >
+                    <Download size={17} aria-hidden="true" />
+                    Télécharger tout
+                  </button>
                 </div>
                 <div className="document-grid point-focal-document-grid">
                   {request.documents.map((document) => (
-                    <article className="document-card" key={document.id}>
-                      <div>
-                        <span>{documentTypeLabel(document.type)}</span>
-                        <strong>{document.originalName}</strong>
-                        <small>{Math.ceil(document.size / 1024)} Ko - {formatDate(document.createdAt)}</small>
-                      </div>
-                      <button
-                        className="icon-action"
-                        type="button"
-                        onClick={() => handleDownloadDocument(document.id, document.originalName)}
-                        aria-label={`Télécharger ${document.originalName}`}
-                      >
-                        <Download size={17} aria-hidden="true" />
-                      </button>
-                    </article>
+                    <DocumentCard
+                      key={document.id}
+                      document={document}
+                      downloadUrl={pointFocalDocumentDownloadUrl(document.id)}
+                      onDownload={handleDownloadDocument}
+                      showDate
+                    />
                   ))}
                 </div>
               </section>

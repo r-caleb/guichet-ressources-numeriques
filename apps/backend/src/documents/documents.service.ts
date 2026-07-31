@@ -2,11 +2,14 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentType, RequestDocument } from '@prisma/client';
+import type { Archiver, ZipOptions } from 'archiver';
 import { basename, extname } from 'node:path';
-import { Readable } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
 import { PrismaService } from '../prisma/prisma.service';
 
 type StoredFile = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName'>;
+type ArchiveDocument = Pick<RequestDocument, 'localPath' | 'mimeType' | 'originalName' | 'type'>;
+const createArchiver = require('archiver') as (format: 'zip', options?: ZipOptions) => Archiver;
 
 @Injectable()
 export class DocumentsService {
@@ -147,6 +150,32 @@ export class DocumentsService {
     return this.getStoredFileDownload(document);
   }
 
+  async getRequestDocumentsArchive(requestId: string) {
+    const request = await this.prisma.resourceRequest.findUnique({
+      where: { id: requestId },
+      select: {
+        number: true,
+        documents: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    return this.createDocumentsArchive(request.number, request.documents);
+  }
+
+  async getPointFocalDocumentsArchive(requestId: string, userId: string) {
+    const request = await this.prisma.resourceRequest.findFirst({
+      where: { id: requestId, pointFocalUserId: userId },
+      select: {
+        number: true,
+        documents: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!request) throw new NotFoundException('Dossier introuvable.');
+
+    return this.createDocumentsArchive(request.number, request.documents);
+  }
+
   async getStoredFileDownload(document: StoredFile) {
     const { bucket, key } = this.parseS3Uri(document.localPath);
     const object = await this.s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
@@ -169,6 +198,47 @@ export class DocumentsService {
         .replace(/^-|-$/g, '') || 'document';
 
     return `${String(type).toLowerCase()}-${Date.now()}-${safeBaseName}${extname(originalName).toLowerCase()}`;
+  }
+
+  private createDocumentsArchive(dossierNumber: string, documents: ArchiveDocument[]) {
+    if (!documents.length) {
+      throw new BadRequestException('Aucun document à télécharger pour ce dossier.');
+    }
+
+    const archive = createArchiver('zip', { zlib: { level: 9 } });
+    const stream = new PassThrough();
+
+    archive.on('error', (error: Error) => stream.destroy(error));
+    archive.pipe(stream);
+
+    void this.appendDocumentsToArchive(archive, documents).catch((error) => archive.destroy(error));
+
+    return {
+      fileName: `documents-${dossierNumber}.zip`,
+      stream,
+    };
+  }
+
+  private async appendDocumentsToArchive(archive: Archiver, documents: ArchiveDocument[]) {
+    for (const [index, document] of documents.entries()) {
+      const { stream } = await this.getStoredFileDownload(document);
+      archive.append(stream, {
+        name: `${String(index + 1).padStart(2, '0')}-${this.buildArchiveEntryName(document)}`,
+      });
+    }
+
+    await archive.finalize();
+  }
+
+  private buildArchiveEntryName(document: ArchiveDocument) {
+    const extension = extname(document.originalName);
+    const name =
+      basename(document.originalName, extension)
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-|-$/g, '') || 'document';
+
+    return `${String(document.type).toLowerCase()}-${name}${extension.toLowerCase()}`;
   }
 
   private normalizePrefix(prefix: string) {

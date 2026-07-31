@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, MessageSquare, Save, UserCheck, UserPlus } from 'lucide-react';
 import { AdminShell } from '@/components/admin-shell';
+import { DocumentCard } from '@/components/document-card';
 import { ChatPanel } from '@/components/chat-panel';
 import { TemporaryPasswordField } from '@/components/temporary-password-field';
 import { audienceTypes, criticalityLevels, platformTypes, requestTypes } from '@/lib/constants';
@@ -16,8 +17,8 @@ import {
   adminFetch,
   auditActionLabel,
   displayMinistryName,
+  documentArchiveDownloadUrl,
   documentDownloadUrl,
-  documentTypeLabel,
   formatDateTime,
   getAdminToken,
   getStoredAdminUser,
@@ -226,6 +227,29 @@ export default function AdminRequestDetailPage() {
       URL.revokeObjectURL(url);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Téléchargement impossible.');
+    }
+  }
+
+  async function handleDownloadAllDocuments() {
+    if (!request) return;
+
+    setError('');
+    try {
+      const token = getAdminToken();
+      const response = await fetch(documentArchiveDownloadUrl(request.id), {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!response.ok) throw new Error('Téléchargement groupé impossible.');
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `documents-${request.number}.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : 'Téléchargement groupé impossible.');
     }
   }
 
@@ -446,24 +470,24 @@ export default function AdminRequestDetailPage() {
               <section className="admin-section">
                 <div className="admin-section-title">
                   <h2>Documents transmis</h2>
+                  <button
+                    className="button secondary compact-button"
+                    type="button"
+                    onClick={handleDownloadAllDocuments}
+                    disabled={!request.documents.length}
+                  >
+                    <Download size={17} aria-hidden="true" />
+                    Télécharger tout
+                  </button>
                 </div>
                 <div className="document-grid admin-detail-document-grid">
                   {request.documents.map((document) => (
-                    <article className="document-card" key={document.id}>
-                      <div>
-                        <span>{documentTypeLabel(document.type)}</span>
-                        <strong>{document.originalName}</strong>
-                        <small>{Math.ceil(document.size / 1024)} Ko</small>
-                      </div>
-                      <button
-                        className="icon-action"
-                        type="button"
-                        onClick={() => handleDownloadDocument(document.id, document.originalName)}
-                        aria-label={`Télécharger ${document.originalName}`}
-                      >
-                        <Download size={17} aria-hidden="true" />
-                      </button>
-                    </article>
+                    <DocumentCard
+                      key={document.id}
+                      document={document}
+                      downloadUrl={documentDownloadUrl(document.id)}
+                      onDownload={handleDownloadDocument}
+                    />
                   ))}
                 </div>
               </section>

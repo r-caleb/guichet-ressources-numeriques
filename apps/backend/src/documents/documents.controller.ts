@@ -15,6 +15,18 @@ import { DocumentsService } from './documents.service';
 export class DocumentsController {
   constructor(private readonly documents: DocumentsService) {}
 
+  @Get('requests/:requestId/download-all')
+  @ApiOperation({
+    summary: 'Télécharger tous les documents d’un dossier',
+    description: 'Génère une archive ZIP contenant les documents transmis pour un dossier administratif.',
+  })
+  async downloadAll(@Param('requestId') requestId: string, @Res() response: Response) {
+    const { fileName, stream } = await this.documents.getRequestDocumentsArchive(requestId);
+    response.setHeader('Content-Type', 'application/zip');
+    response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    stream.pipe(response);
+  }
+
   @Get(':id/download')
   @ApiOperation({
     summary: 'Télécharger un document de dossier',

@@ -234,6 +234,26 @@ export class RequestsController {
     stream.pipe(response);
   }
 
+  @Get('me/:id/documents/download-all')
+  @ApiOperation({
+    summary: 'Télécharger tous les documents d’un dossier Point Focal',
+    description:
+      "Génère une archive ZIP des documents d'un dossier appartenant au Point Focal connecté.",
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.POINT_FOCAL)
+  async downloadMyDocumentsArchive(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Res() response: Response,
+  ) {
+    const { fileName, stream } = await this.documents.getPointFocalDocumentsArchive(id, req.user?.userId ?? '');
+    response.setHeader('Content-Type', 'application/zip');
+    response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    stream.pipe(response);
+  }
+
   @Post('me/:id/additional-documents')
   @ApiOperation({
     summary: 'Transmettre des compléments sur un dossier connecté',

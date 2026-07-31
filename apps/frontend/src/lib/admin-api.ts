@@ -331,8 +331,16 @@ export function documentDownloadUrl(documentId: string) {
   return `${API_BASE_URL}/admin/documents/${documentId}/download`;
 }
 
+export function documentArchiveDownloadUrl(requestId: string) {
+  return `${API_BASE_URL}/admin/documents/requests/${requestId}/download-all`;
+}
+
 export function pointFocalDocumentDownloadUrl(documentId: string) {
   return `${API_BASE_URL}/requests/me/documents/${documentId}/download`;
+}
+
+export function pointFocalDocumentArchiveDownloadUrl(requestId: string) {
+  return `${API_BASE_URL}/requests/me/${requestId}/documents/download-all`;
 }
 
 export function chatAttachmentDownloadUrl(attachmentId: string) {
