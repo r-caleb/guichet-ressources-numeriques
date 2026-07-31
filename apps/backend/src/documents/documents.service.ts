@@ -129,7 +129,7 @@ export class DocumentsService {
     if (!document) throw new NotFoundException('Document introuvable.');
 
     if (!document.localPath.startsWith('s3://')) {
-      throw new NotFoundException('Ce document n’est pas disponible dans le stockage S3.');
+      throw new NotFoundException('Ce document n’est pas disponible pour le moment.');
     }
 
     return this.getStoredFileDownload(document);
@@ -145,7 +145,7 @@ export class DocumentsService {
     if (!document) throw new NotFoundException('Document introuvable.');
 
     if (!document.localPath.startsWith('s3://')) {
-      throw new NotFoundException('Ce document n’est pas disponible dans le stockage S3.');
+      throw new NotFoundException('Ce document n’est pas disponible pour le moment.');
     }
 
     return this.getStoredFileDownload(document);
@@ -182,7 +182,7 @@ export class DocumentsService {
     const object = await this.s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
 
     if (!object.Body) {
-      throw new NotFoundException('Fichier introuvable dans le stockage S3.');
+      throw new NotFoundException('Fichier introuvable pour le moment.');
     }
 
     return {
@@ -231,7 +231,7 @@ export class DocumentsService {
     if (!entries.length) {
       throw new BadRequestException(
         unavailableDocuments.length
-          ? `Aucun document du dossier n’est disponible dans le stockage S3 : ${unavailableDocuments.join(', ')}.`
+          ? 'Aucun document du dossier n’est disponible pour le téléchargement groupé pour le moment.'
           : 'Aucun document à télécharger pour ce dossier.',
       );
     }
@@ -241,7 +241,7 @@ export class DocumentsService {
         name: 'documents-indisponibles.txt',
         buffer: Buffer.from(
           [
-            'Certains documents du dossier ne sont pas disponibles dans le stockage S3.',
+            "Certains documents du dossier n'ont pas pu être inclus dans le téléchargement groupé.",
             '',
             ...unavailableDocuments.map((name) => `- ${name}`),
           ].join('\n'),
@@ -296,7 +296,7 @@ export class DocumentsService {
 
   private parseS3Uri(uri: string) {
     const match = uri.match(/^s3:\/\/([^/]+)\/(.+)$/);
-    if (!match) throw new BadRequestException('Ce document n’est pas disponible dans le stockage S3.');
+    if (!match) throw new BadRequestException('Ce document n’est pas disponible pour le moment.');
 
     return {
       bucket: match[1],
