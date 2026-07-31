@@ -1809,6 +1809,48 @@ input[type='file'].control {
   color: var(--gov-blue);
 }
 
+.messages-filterbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.messages-filterbar button {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  color: var(--gov-muted);
+  background: #f8fbfe;
+  border: 1px solid var(--gov-line);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.messages-filterbar button.active {
+  color: var(--gov-blue);
+  background: #e8f2fb;
+  border-color: #c9dced;
+  box-shadow: inset 3px 0 0 var(--gov-blue);
+}
+
+.messages-filterbar span {
+  display: inline-flex;
+  min-width: 24px;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  color: var(--gov-blue);
+  background: #ffffff;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
 .messages-list {
   display: grid;
   gap: 8px;
@@ -1829,6 +1871,28 @@ input[type='file'].control {
 .conversation-item.active {
   border-color: var(--gov-blue);
   box-shadow: inset 4px 0 0 var(--gov-blue);
+}
+
+.conversation-item.needs-reply {
+  background: #fffaf0;
+  border-color: #f2d27a;
+}
+
+.conversation-item-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.conversation-item mark {
+  padding: 4px 7px;
+  color: #4a3500;
+  background: #ffe8a4;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .conversation-item span,

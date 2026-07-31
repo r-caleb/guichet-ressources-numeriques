@@ -8,6 +8,7 @@ import { AdminShell } from '@/components/admin-shell';
 import { ChatPanel } from '@/components/chat-panel';
 import {
   ChatConversation,
+  type UserRole,
   adminFetch,
   displayMinistryName,
   formatDateTime,
@@ -15,6 +16,8 @@ import {
   statusClassName,
   statusLabel,
 } from '@/lib/admin-api';
+
+type MessageFilter = 'all' | 'needsReply' | 'request' | 'general';
 
 function conversationTitle(conversation: ChatConversation) {
   if (conversation.request) return `${conversation.request.number} - ${conversation.request.platformName}`;
@@ -32,11 +35,17 @@ function lastMessageText(conversation: ChatConversation) {
   return `${lastMessage.attachments.length} pièce(s) jointe(s)`;
 }
 
+function latestMessageNeedsReply(conversation: ChatConversation) {
+  const lastMessage = conversation.messages[0];
+  return lastMessage?.sender.roles.includes('POINT_FOCAL' satisfies UserRole) ?? false;
+}
+
 export default function AdminMessagesPage() {
   const router = useRouter();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
+  const [messageFilter, setMessageFilter] = useState<MessageFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState('');
@@ -74,10 +83,40 @@ export default function AdminMessagesPage() {
       .finally(() => setIsLoading(false));
   }, [router]);
 
-  const openCount = useMemo(
-    () => conversations.filter((conversation) => conversation.status === 'OPEN').length,
+  const needsReplyCount = useMemo(
+    () => conversations.filter((conversation) => latestMessageNeedsReply(conversation)).length,
     [conversations],
   );
+
+  const requestConversationCount = useMemo(
+    () => conversations.filter((conversation) => conversation.type === 'REQUEST').length,
+    [conversations],
+  );
+
+  const generalConversationCount = useMemo(
+    () => conversations.filter((conversation) => conversation.type === 'GENERAL').length,
+    [conversations],
+  );
+
+  const filteredConversations = useMemo(() => {
+    if (messageFilter === 'needsReply') {
+      return conversations.filter((conversation) => latestMessageNeedsReply(conversation));
+    }
+    if (messageFilter === 'request') {
+      return conversations.filter((conversation) => conversation.type === 'REQUEST');
+    }
+    if (messageFilter === 'general') {
+      return conversations.filter((conversation) => conversation.type === 'GENERAL');
+    }
+    return conversations;
+  }, [conversations, messageFilter]);
+
+  function filterCount(filter: MessageFilter) {
+    if (filter === 'needsReply') return needsReplyCount;
+    if (filter === 'request') return requestConversationCount;
+    if (filter === 'general') return generalConversationCount;
+    return conversations.length;
+  }
 
   return (
     <AdminShell>
@@ -93,16 +132,16 @@ export default function AdminMessagesPage() {
 
       <section className="admin-summary-strip">
         <div>
-          <span>Conversations ouvertes</span>
-          <strong>{isLoading ? '...' : openCount}</strong>
+          <span>À traiter</span>
+          <strong>{isLoading ? '...' : needsReplyCount}</strong>
         </div>
         <div>
-          <span>Type actif</span>
-          <strong>Dossiers + général</strong>
+          <span>Dossiers</span>
+          <strong>{isLoading ? '...' : requestConversationCount}</strong>
         </div>
         <div>
-          <span>Chat général</span>
-          <strong>Actif</strong>
+          <span>Questions générales</span>
+          <strong>{isLoading ? '...' : generalConversationCount}</strong>
         </div>
       </section>
 
@@ -112,10 +151,33 @@ export default function AdminMessagesPage() {
             <Inbox size={18} aria-hidden="true" />
             <strong>Boîte de réception</strong>
           </div>
-          <div className="messages-list">
-            {conversations.map((conversation) => (
+          <div className="messages-filterbar" aria-label="Filtres des conversations">
+            {[
+              { value: 'all', label: 'Toutes' },
+              { value: 'needsReply', label: 'À traiter' },
+              { value: 'request', label: 'Dossiers' },
+              { value: 'general', label: 'Général' },
+            ].map((option) => (
               <button
-                className={`conversation-item ${conversation.id === selectedId ? 'active' : ''}`}
+                className={messageFilter === option.value ? 'active' : ''}
+                key={option.value}
+                type="button"
+                onClick={() => setMessageFilter(option.value as MessageFilter)}
+              >
+                {option.label}
+                <span>{isLoading ? '...' : filterCount(option.value as MessageFilter)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="messages-list">
+            {filteredConversations.map((conversation) => {
+              const needsReply = latestMessageNeedsReply(conversation);
+
+              return (
+              <button
+                className={`conversation-item ${conversation.id === selectedId ? 'active' : ''} ${
+                  needsReply ? 'needs-reply' : ''
+                }`}
                 key={conversation.id}
                 type="button"
                 onClick={() => {
@@ -125,14 +187,18 @@ export default function AdminMessagesPage() {
                   });
                 }}
               >
-                <span>{conversationTypeLabel(conversation)}</span>
+                <span className="conversation-item-topline">
+                  {conversationTypeLabel(conversation)}
+                  {needsReply ? <mark>À traiter</mark> : null}
+                </span>
                 <strong>{conversation.request?.platformName ?? conversation.subject ?? 'Question générale'}</strong>
                 <small>{lastMessageText(conversation)}</small>
                 <em>{formatDateTime(conversation.lastMessageAt ?? conversation.createdAt)}</em>
               </button>
-            ))}
+              );
+            })}
 
-            {!isLoading && conversations.length === 0 ? (
+            {!isLoading && filteredConversations.length === 0 ? (
               <p className="admin-empty">Aucune conversation pour le moment.</p>
             ) : null}
             {isLoading ? <p className="admin-empty">Chargement des conversations...</p> : null}
