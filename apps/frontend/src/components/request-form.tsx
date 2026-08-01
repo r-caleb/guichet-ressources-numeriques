@@ -3,7 +3,15 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import { Download, Printer, RotateCcw, Send } from 'lucide-react';
 import { Ministry, RequestReceipt, apiFetch, receiptPdfUrl } from '@/lib/api';
-import { audienceTypes, criticalityLevels, ministries as fallbackMinistries, platformTypes, requestTypes } from '@/lib/constants';
+import {
+  accessResetTypes,
+  accessResetUrgencyLevels,
+  audienceTypes,
+  criticalityLevels,
+  ministries as fallbackMinistries,
+  platformTypes,
+  requestTypes,
+} from '@/lib/constants';
 
 type SubmittedSummary = {
   receipt: RequestReceipt;
@@ -18,6 +26,8 @@ type SubmittedSummary = {
   officialPurpose: string;
   domains: string[];
   documents: string[];
+  requestDetails?: string;
+  isAccessReset: boolean;
 };
 
 function optionLabel(options: Array<{ label: string; value: string }>, value: FormDataEntryValue | null) {
@@ -77,6 +87,7 @@ export function RequestForm() {
   );
   const isOtherInstitution = selectedMinistry?.name.toLowerCase() === 'autre institution publique';
   const isOtherRequestType = selectedRequestType === 'OTHER';
+  const isAccessReset = selectedRequestType === 'ACCESS_RESET';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,6 +119,44 @@ export function RequestForm() {
       if (isOtherRequestType && !String(formData.get('requestDetails') ?? '').trim()) {
         setError("Veuillez préciser les détails utiles pour l'objet Autre.");
         return;
+      }
+
+      if (isAccessReset) {
+        const resourceDomain = String(formData.get('resourceDomain') ?? '').trim();
+        const accessType = String(formData.get('resetAccessType') ?? '').trim();
+        const concernedAccount = String(formData.get('concernedAccount') ?? '').trim();
+        const resetReason = String(formData.get('resetReason') ?? '').trim();
+        const urgency = String(formData.get('resetUrgency') ?? '').trim();
+
+        if (!resourceDomain || !accessType || !resetReason || !urgency) {
+          setError("Veuillez compléter les informations de la ressource concernée par la réinitialisation.");
+          return;
+        }
+
+        const normalizedResource = resourceDomain.replace(/\.gouv\.cd$/i, '');
+        const accessTypeLabel = optionLabel(accessResetTypes, accessType);
+        const urgencyLabel = optionLabel(accessResetUrgencyLevels, urgency);
+        const requestDetails = [
+          `Type d'accès concerné : ${accessTypeLabel}`,
+          concernedAccount ? `Compte ou utilisateur concerné : ${concernedAccount}` : null,
+          `Motif : ${resetReason}`,
+          `Niveau d'urgence : ${urgencyLabel}`,
+        ]
+          .filter(Boolean)
+          .join('\n');
+
+        formData.set('platformName', `Réinitialisation des accès - ${normalizedResource}.gouv.cd`);
+        formData.set('platformType', 'OTHER');
+        formData.set('audience', 'INTERNAL_ONLY');
+        formData.set('criticality', urgency === 'CRITICAL' ? 'CRITICAL' : urgency === 'URGENT' ? 'HIGH' : 'NORMAL');
+        formData.set('officialPurpose', `Réinitialisation des accès : ${resetReason}`);
+        formData.set('prefix1', normalizedResource);
+        formData.set('requestDetails', requestDetails);
+        formData.delete('resourceDomain');
+        formData.delete('resetAccessType');
+        formData.delete('concernedAccount');
+        formData.delete('resetReason');
+        formData.delete('resetUrgency');
       }
 
       const receipt = await apiFetch<RequestReceipt>('/requests', {
@@ -152,6 +201,8 @@ export function RequestForm() {
         officialPurpose: String(formData.get('officialPurpose') ?? ''),
         domains,
         documents,
+        requestDetails: String(formData.get('requestDetails') ?? ''),
+        isAccessReset,
       });
 
       form.reset();
@@ -215,7 +266,7 @@ export function RequestForm() {
                 <dd>{summary.ministryName}</dd>
               </div>
               <div>
-                <dt>Plateforme</dt>
+                <dt>{summary.isAccessReset ? 'Ressource concernée' : 'Plateforme'}</dt>
                 <dd>{summary.receipt.platformName}</dd>
               </div>
               <div>
@@ -246,14 +297,18 @@ export function RequestForm() {
                 <dt>Types</dt>
                 <dd>{summary.requestTypes.join(', ')}</dd>
               </div>
-              <div>
-                <dt>Type de plateforme</dt>
-                <dd>{summary.platformType}</dd>
-              </div>
-              <div>
-                <dt>Public cible</dt>
-                <dd>{summary.audience}</dd>
-              </div>
+              {!summary.isAccessReset ? (
+                <>
+                  <div>
+                    <dt>Type de plateforme</dt>
+                    <dd>{summary.platformType}</dd>
+                  </div>
+                  <div>
+                    <dt>Public cible</dt>
+                    <dd>{summary.audience}</dd>
+                  </div>
+                </>
+              ) : null}
               <div>
                 <dt>Criticité</dt>
                 <dd>{summary.criticality}</dd>
@@ -262,7 +317,7 @@ export function RequestForm() {
           </article>
 
           <article>
-            <h3>Domaines proposés</h3>
+            <h3>{summary.isAccessReset ? 'Domaine concerné' : 'Domaines proposés'}</h3>
             <ol className="receipt-items">
               {summary.domains.map((domain) => (
                 <li key={domain}>{domain}</li>
@@ -271,9 +326,16 @@ export function RequestForm() {
           </article>
 
           <article className="receipt-full">
-            <h3>Finalité officielle</h3>
+            <h3>{summary.isAccessReset ? 'Motif de la demande' : 'Finalité officielle'}</h3>
             <p>{summary.officialPurpose}</p>
           </article>
+
+          {summary.isAccessReset && summary.requestDetails ? (
+            <article className="receipt-full">
+              <h3>Détails de réinitialisation</h3>
+              <p>{summary.requestDetails}</p>
+            </article>
+          ) : null}
 
           <article className="receipt-full">
             <h3>Documents transmis</h3>
@@ -410,62 +472,117 @@ export function RequestForm() {
       <section className="form-section">
         <div>
           <p className="eyebrow">Étape 3</p>
-          <h2>Plateforme et nom de domaine</h2>
+          <h2>{isAccessReset ? 'Ressource concernée' : 'Plateforme et nom de domaine'}</h2>
         </div>
-        <div className="form-grid two">
-          <label className="field">
-            <RequiredLabel>Nom de la plateforme</RequiredLabel>
-            <input className="control" name="platformName" required />
-          </label>
-          <label className="field">
-            <RequiredLabel>Type de plateforme</RequiredLabel>
-            <select className="control" name="platformType" required>
-              <option value="">Sélectionner</option>
-              {platformTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <RequiredLabel>Public cible</RequiredLabel>
-            <select className="control" name="audience" required>
-              <option value="">Sélectionner</option>
-              {audienceTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <RequiredLabel>Niveau de criticité</RequiredLabel>
-            <select className="control" name="criticality" required>
-              <option value="">Sélectionner</option>
-              {criticalityLevels.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field full">
-            <RequiredLabel>Finalité officielle</RequiredLabel>
-            <textarea className="control" name="officialPurpose" minLength={10} required />
-          </label>
-        </div>
-        <div className="form-grid">
-          {['Nom de domaine souhaité', 'Alternative 1', 'Alternative 2'].map((label, index) => (
-            <label className="field" key={label}>
-              {index === 0 ? <RequiredLabel>{label}</RequiredLabel> : <span className="field-label">{label}</span>}
+        {isAccessReset ? (
+          <div className="form-grid two">
+            <label className="field">
+              <RequiredLabel>Domaine concerné</RequiredLabel>
               <span className="domain-suffix">
-                <input className="control" name={`prefix${index + 1}`} placeholder="economie" required={index === 0} />
+                <input className="control" name="resourceDomain" placeholder="economie" required={isAccessReset} />
                 <span>.gouv.cd</span>
               </span>
             </label>
-          ))}
-        </div>
+            <label className="field">
+              <RequiredLabel>Type d'accès concerné</RequiredLabel>
+              <select className="control" name="resetAccessType" required={isAccessReset}>
+                <option value="">Sélectionner</option>
+                {accessResetTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span className="field-label">Compte ou utilisateur concerné</span>
+              <input className="control" name="concernedAccount" placeholder="Si connu" />
+            </label>
+            <label className="field">
+              <RequiredLabel>Niveau d'urgence</RequiredLabel>
+              <select className="control" name="resetUrgency" required={isAccessReset}>
+                <option value="">Sélectionner</option>
+                {accessResetUrgencyLevels.map((level) => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field full">
+              <RequiredLabel>Motif de la réinitialisation</RequiredLabel>
+              <textarea
+                className="control"
+                name="resetReason"
+                minLength={10}
+                placeholder="Exemple : perte des accès après changement de Point Focal."
+                required={isAccessReset}
+              />
+            </label>
+          </div>
+        ) : (
+          <>
+            <div className="form-grid two">
+              <label className="field">
+                <RequiredLabel>Nom de la plateforme</RequiredLabel>
+                <input className="control" name="platformName" required={!isAccessReset} />
+              </label>
+              <label className="field">
+                <RequiredLabel>Type de plateforme</RequiredLabel>
+                <select className="control" name="platformType" required={!isAccessReset}>
+                  <option value="">Sélectionner</option>
+                  {platformTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <RequiredLabel>Public cible</RequiredLabel>
+                <select className="control" name="audience" required={!isAccessReset}>
+                  <option value="">Sélectionner</option>
+                  {audienceTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <RequiredLabel>Niveau de criticité</RequiredLabel>
+                <select className="control" name="criticality" required={!isAccessReset}>
+                  <option value="">Sélectionner</option>
+                  {criticalityLevels.map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field full">
+                <RequiredLabel>Finalité officielle</RequiredLabel>
+                <textarea className="control" name="officialPurpose" minLength={10} required={!isAccessReset} />
+              </label>
+            </div>
+            <div className="form-grid">
+              {['Nom de domaine souhaité', 'Alternative 1', 'Alternative 2'].map((label, index) => (
+                <label className="field" key={label}>
+                  {index === 0 ? <RequiredLabel>{label}</RequiredLabel> : <span className="field-label">{label}</span>}
+                  <span className="domain-suffix">
+                    <input
+                      className="control"
+                      name={`prefix${index + 1}`}
+                      placeholder="economie"
+                      required={index === 0 && !isAccessReset}
+                    />
+                    <span>.gouv.cd</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       <section className="form-section">

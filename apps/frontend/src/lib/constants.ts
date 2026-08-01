@@ -7,6 +7,21 @@ export const requestTypes = [
   { label: 'Autre', value: 'OTHER' },
 ];
 
+export const accessResetTypes = [
+  { label: 'Administration de la plateforme', value: 'ADMINISTRATION' },
+  { label: 'Hébergement', value: 'HOSTING' },
+  { label: 'FTP / SFTP', value: 'FTP_SFTP' },
+  { label: 'Base de données', value: 'DATABASE' },
+  { label: 'Messagerie', value: 'EMAIL' },
+  { label: 'Autre', value: 'OTHER' },
+];
+
+export const accessResetUrgencyLevels = [
+  { label: 'Normal', value: 'NORMAL' },
+  { label: 'Urgent', value: 'URGENT' },
+  { label: 'Critique', value: 'CRITICAL' },
+];
+
 export const platformTypes = [
   { label: 'Site institutionnel', value: 'INSTITUTIONAL_SITE' },
   { label: 'Application Web', value: 'WEB_APPLICATION' },
