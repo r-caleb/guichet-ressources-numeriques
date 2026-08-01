@@ -547,6 +547,10 @@ input[type='file'].control {
   line-height: 1.7;
 }
 
+.receipt-details {
+  white-space: pre-line;
+}
+
 .receipt-list {
   display: grid;
   gap: 10px;

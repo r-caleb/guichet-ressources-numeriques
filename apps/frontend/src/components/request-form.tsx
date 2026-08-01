@@ -11,6 +11,7 @@ import {
   ministries as fallbackMinistries,
   platformTypes,
   requestTypes,
+  resourceModificationTypes,
 } from '@/lib/constants';
 
 type SubmittedSummary = {
@@ -28,6 +29,7 @@ type SubmittedSummary = {
   documents: string[];
   requestDetails?: string;
   isAccessReset: boolean;
+  isResourceModification: boolean;
 };
 
 function optionLabel(options: Array<{ label: string; value: string }>, value: FormDataEntryValue | null) {
@@ -88,6 +90,8 @@ export function RequestForm() {
   const isOtherInstitution = selectedMinistry?.name.toLowerCase() === 'autre institution publique';
   const isOtherRequestType = selectedRequestType === 'OTHER';
   const isAccessReset = selectedRequestType === 'ACCESS_RESET';
+  const isResourceModification = selectedRequestType === 'RESOURCE_MODIFICATION';
+  const isExistingResourceRequest = isAccessReset || isResourceModification;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -159,6 +163,42 @@ export function RequestForm() {
         formData.delete('resetUrgency');
       }
 
+      if (isResourceModification) {
+        const resourceDomain = String(formData.get('modificationResourceDomain') ?? '').trim();
+        const modificationType = String(formData.get('modificationType') ?? '').trim();
+        const modificationDescription = String(formData.get('modificationDescription') ?? '').trim();
+        const administrativeJustification = String(formData.get('administrativeJustification') ?? '').trim();
+        const criticality = String(formData.get('modificationCriticality') ?? '').trim();
+
+        if (!resourceDomain || !modificationType || !modificationDescription || !administrativeJustification || !criticality) {
+          setError('Veuillez compléter les informations de la ressource à modifier.');
+          return;
+        }
+
+        const normalizedResource = resourceDomain.replace(/\.gouv\.cd$/i, '');
+        const modificationTypeLabel = optionLabel(resourceModificationTypes, modificationType);
+        const criticalityLabel = optionLabel(criticalityLevels, criticality);
+        const requestDetails = [
+          `Type de modification : ${modificationTypeLabel}`,
+          `Description de la modification : ${modificationDescription}`,
+          `Justification administrative : ${administrativeJustification}`,
+          `Niveau de criticité : ${criticalityLabel}`,
+        ].join('\n');
+
+        formData.set('platformName', `Modification des ressources - ${normalizedResource}.gouv.cd`);
+        formData.set('platformType', 'OTHER');
+        formData.set('audience', 'INTERNAL_ONLY');
+        formData.set('criticality', criticality);
+        formData.set('officialPurpose', `Modification des ressources : ${administrativeJustification}`);
+        formData.set('prefix1', normalizedResource);
+        formData.set('requestDetails', requestDetails);
+        formData.delete('modificationResourceDomain');
+        formData.delete('modificationType');
+        formData.delete('modificationDescription');
+        formData.delete('administrativeJustification');
+        formData.delete('modificationCriticality');
+      }
+
       const receipt = await apiFetch<RequestReceipt>('/requests', {
         method: 'POST',
         body: formData,
@@ -203,6 +243,7 @@ export function RequestForm() {
         documents,
         requestDetails: String(formData.get('requestDetails') ?? ''),
         isAccessReset,
+        isResourceModification,
       });
 
       form.reset();
@@ -266,7 +307,7 @@ export function RequestForm() {
                 <dd>{summary.ministryName}</dd>
               </div>
               <div>
-                <dt>{summary.isAccessReset ? 'Ressource concernée' : 'Plateforme'}</dt>
+                <dt>{summary.isAccessReset || summary.isResourceModification ? 'Ressource concernée' : 'Plateforme'}</dt>
                 <dd>{summary.receipt.platformName}</dd>
               </div>
               <div>
@@ -297,7 +338,7 @@ export function RequestForm() {
                 <dt>Types</dt>
                 <dd>{summary.requestTypes.join(', ')}</dd>
               </div>
-              {!summary.isAccessReset ? (
+              {!summary.isAccessReset && !summary.isResourceModification ? (
                 <>
                   <div>
                     <dt>Type de plateforme</dt>
@@ -317,7 +358,7 @@ export function RequestForm() {
           </article>
 
           <article>
-            <h3>{summary.isAccessReset ? 'Domaine concerné' : 'Domaines proposés'}</h3>
+            <h3>{summary.isAccessReset || summary.isResourceModification ? 'Domaine concerné' : 'Domaines proposés'}</h3>
             <ol className="receipt-items">
               {summary.domains.map((domain) => (
                 <li key={domain}>{domain}</li>
@@ -326,14 +367,21 @@ export function RequestForm() {
           </article>
 
           <article className="receipt-full">
-            <h3>{summary.isAccessReset ? 'Motif de la demande' : 'Finalité officielle'}</h3>
+            <h3>{summary.isAccessReset || summary.isResourceModification ? 'Motif de la demande' : 'Finalité officielle'}</h3>
             <p>{summary.officialPurpose}</p>
           </article>
 
           {summary.isAccessReset && summary.requestDetails ? (
             <article className="receipt-full">
               <h3>Détails de réinitialisation</h3>
-              <p>{summary.requestDetails}</p>
+              <p className="receipt-details">{summary.requestDetails}</p>
+            </article>
+          ) : null}
+
+          {summary.isResourceModification && summary.requestDetails ? (
+            <article className="receipt-full">
+              <h3>Détails de modification</h3>
+              <p className="receipt-details">{summary.requestDetails}</p>
             </article>
           ) : null}
 
@@ -472,7 +520,7 @@ export function RequestForm() {
       <section className="form-section">
         <div>
           <p className="eyebrow">Étape 3</p>
-          <h2>{isAccessReset ? 'Ressource concernée' : 'Plateforme et nom de domaine'}</h2>
+          <h2>{isExistingResourceRequest ? 'Ressource concernée' : 'Plateforme et nom de domaine'}</h2>
         </div>
         {isAccessReset ? (
           <div className="form-grid two">
@@ -520,16 +568,73 @@ export function RequestForm() {
               />
             </label>
           </div>
+        ) : isResourceModification ? (
+          <div className="form-grid two">
+            <label className="field">
+              <RequiredLabel>Domaine concerné</RequiredLabel>
+              <span className="domain-suffix">
+                <input
+                  className="control"
+                  name="modificationResourceDomain"
+                  placeholder="economie"
+                  required={isResourceModification}
+                />
+                <span>.gouv.cd</span>
+              </span>
+            </label>
+            <label className="field">
+              <RequiredLabel>Type de modification</RequiredLabel>
+              <select className="control" name="modificationType" required={isResourceModification}>
+                <option value="">Sélectionner</option>
+                {resourceModificationTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <RequiredLabel>Niveau de criticité</RequiredLabel>
+              <select className="control" name="modificationCriticality" required={isResourceModification}>
+                <option value="">Sélectionner</option>
+                {criticalityLevels.map((level) => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field full">
+              <RequiredLabel>Description de la modification</RequiredLabel>
+              <textarea
+                className="control"
+                name="modificationDescription"
+                minLength={10}
+                placeholder="Exemple : pointer le domaine vers une nouvelle adresse IP."
+                required={isResourceModification}
+              />
+            </label>
+            <label className="field full">
+              <RequiredLabel>Justification administrative</RequiredLabel>
+              <textarea
+                className="control"
+                name="administrativeJustification"
+                minLength={10}
+                placeholder="Exemple : migration vers une nouvelle infrastructure du ministère."
+                required={isResourceModification}
+              />
+            </label>
+          </div>
         ) : (
           <>
             <div className="form-grid two">
               <label className="field">
                 <RequiredLabel>Nom de la plateforme</RequiredLabel>
-                <input className="control" name="platformName" required={!isAccessReset} />
+                <input className="control" name="platformName" required={!isExistingResourceRequest} />
               </label>
               <label className="field">
                 <RequiredLabel>Type de plateforme</RequiredLabel>
-                <select className="control" name="platformType" required={!isAccessReset}>
+                <select className="control" name="platformType" required={!isExistingResourceRequest}>
                   <option value="">Sélectionner</option>
                   {platformTypes.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -540,7 +645,7 @@ export function RequestForm() {
               </label>
               <label className="field">
                 <RequiredLabel>Public cible</RequiredLabel>
-                <select className="control" name="audience" required={!isAccessReset}>
+                <select className="control" name="audience" required={!isExistingResourceRequest}>
                   <option value="">Sélectionner</option>
                   {audienceTypes.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -551,7 +656,7 @@ export function RequestForm() {
               </label>
               <label className="field">
                 <RequiredLabel>Niveau de criticité</RequiredLabel>
-                <select className="control" name="criticality" required={!isAccessReset}>
+                <select className="control" name="criticality" required={!isExistingResourceRequest}>
                   <option value="">Sélectionner</option>
                   {criticalityLevels.map((level) => (
                     <option key={level.value} value={level.value}>
@@ -562,7 +667,7 @@ export function RequestForm() {
               </label>
               <label className="field full">
                 <RequiredLabel>Finalité officielle</RequiredLabel>
-                <textarea className="control" name="officialPurpose" minLength={10} required={!isAccessReset} />
+                <textarea className="control" name="officialPurpose" minLength={10} required={!isExistingResourceRequest} />
               </label>
             </div>
             <div className="form-grid">
@@ -574,7 +679,7 @@ export function RequestForm() {
                       className="control"
                       name={`prefix${index + 1}`}
                       placeholder="economie"
-                      required={index === 0 && !isAccessReset}
+                      required={index === 0 && !isExistingResourceRequest}
                     />
                     <span>.gouv.cd</span>
                   </span>

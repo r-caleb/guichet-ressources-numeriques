@@ -78,8 +78,14 @@ export class RequestsService {
       throw new BadRequestException('Les détails de réinitialisation des accès sont obligatoires.');
     }
 
+    if (dto.requestTypes.includes(RequestType.RESOURCE_MODIFICATION) && !dto.requestDetails) {
+      throw new BadRequestException('Les détails de modification des ressources sont obligatoires.');
+    }
+
     this.assertDistinctPrefixes([dto.prefix1, dto.prefix2, dto.prefix3]);
-    if (!dto.requestTypes.includes(RequestType.ACCESS_RESET)) {
+    const concernsExistingResource =
+      dto.requestTypes.includes(RequestType.ACCESS_RESET) || dto.requestTypes.includes(RequestType.RESOURCE_MODIFICATION);
+    if (!concernsExistingResource) {
       await this.assertPrefixAvailable(dto.prefix1);
       if (dto.prefix2) await this.assertPrefixAvailable(dto.prefix2);
       if (dto.prefix3) await this.assertPrefixAvailable(dto.prefix3);

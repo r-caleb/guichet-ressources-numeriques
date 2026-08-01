@@ -22,6 +22,15 @@ export const accessResetUrgencyLevels = [
   { label: 'Critique', value: 'CRITICAL' },
 ];
 
+export const resourceModificationTypes = [
+  { label: 'Modification DNS', value: 'DNS_CHANGE' },
+  { label: "Changement d'hébergement", value: 'HOSTING_CHANGE' },
+  { label: "Ajout / retrait d'un accès", value: 'ACCESS_CHANGE' },
+  { label: 'Modification des informations de la plateforme', value: 'PLATFORM_INFO_CHANGE' },
+  { label: 'Mise à jour technique', value: 'TECHNICAL_UPDATE' },
+  { label: 'Autre', value: 'OTHER' },
+];
+
 export const platformTypes = [
   { label: 'Site institutionnel', value: 'INSTITUTIONAL_SITE' },
   { label: 'Application Web', value: 'WEB_APPLICATION' },
