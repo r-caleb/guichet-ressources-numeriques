@@ -88,6 +88,7 @@ export class ReceiptsService {
       this.drawHeader(doc);
       this.drawReceiptTitle(doc, request);
       this.drawKeyFacts(doc, request);
+      const concernsExistingResource = this.concernsExistingResource(request);
       this.drawSection(doc, 'Informations du Point Focal', [
         ['Nom', request.focalLastName],
         ['Postnom', request.focalMiddleName],
@@ -103,18 +104,25 @@ export class ReceiptsService {
           'Type de demande',
           request.requestTypes.map((type) => this.requestTypeLabel(type)).join(', '),
         ],
-        ['Nom de la plateforme', request.platformName],
-        ['Type de plateforme', this.platformTypeLabel(request.platformType)],
-        ['Public cible', this.audienceTypeLabel(request.audience)],
+        [concernsExistingResource ? 'Ressource concernée' : 'Nom de la plateforme', request.platformName],
+        ...(concernsExistingResource
+          ? []
+          : ([
+              ['Type de plateforme', this.platformTypeLabel(request.platformType)],
+              ['Public cible', this.audienceTypeLabel(request.audience)],
+            ] satisfies Array<[string, string]>)),
         ['Criticité', this.criticalityLabel(request.criticality)],
         ['Contact technique', request.technicalContact ?? 'Point Focal désigné'],
       ]);
-      this.drawLongTextSection(doc, 'Finalité officielle', request.officialPurpose);
+      this.drawLongTextSection(doc, concernsExistingResource ? 'Motif de la demande' : 'Finalité officielle', request.officialPurpose);
+      if (request.requestDetails) {
+        this.drawLongTextSection(doc, this.requestDetailsTitle(request), request.requestDetails);
+      }
       this.drawSection(
         doc,
-        'Noms de domaine proposés',
+        concernsExistingResource ? 'Domaine concerné' : 'Noms de domaine proposés',
         request.domainChoices.map((choice) => [
-          this.domainRankLabel(choice.rank),
+          concernsExistingResource ? 'Domaine' : this.domainRankLabel(choice.rank),
           choice.fullDomain,
         ]),
       );
@@ -201,14 +209,16 @@ export class ReceiptsService {
   }
 
   private drawKeyFacts(doc: PDFKit.PDFDocument, request: ReceiptRequest) {
+    const concernsExistingResource = this.concernsExistingResource(request);
+
     this.drawSection(
       doc,
       'Résumé du dépôt',
       [
         ['Date de dépôt', this.formatDateTime(request.createdAt)],
         ['Ministère / Institution', this.ministryName(request)],
-        ['Plateforme', request.platformName],
-        ['Domaine principal demandé', request.domainChoices[0]?.fullDomain ?? 'Non renseigné'],
+        [concernsExistingResource ? 'Ressource concernée' : 'Plateforme', request.platformName],
+        [concernsExistingResource ? 'Domaine concerné' : 'Domaine principal demandé', request.domainChoices[0]?.fullDomain ?? 'Non renseigné'],
       ],
       { titleAlign: 'center' },
     );
@@ -357,6 +367,19 @@ export class ReceiptsService {
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  }
+
+  private concernsExistingResource(request: ReceiptRequest) {
+    return (
+      request.requestTypes.includes(RequestType.ACCESS_RESET) ||
+      request.requestTypes.includes(RequestType.RESOURCE_MODIFICATION)
+    );
+  }
+
+  private requestDetailsTitle(request: ReceiptRequest) {
+    if (request.requestTypes.includes(RequestType.ACCESS_RESET)) return 'Détails de réinitialisation';
+    if (request.requestTypes.includes(RequestType.RESOURCE_MODIFICATION)) return 'Détails de modification';
+    return 'Détails utiles';
   }
 
   private requestTypeLabel(type: RequestType) {
